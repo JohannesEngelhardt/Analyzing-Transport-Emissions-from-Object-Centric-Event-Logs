@@ -1,0 +1,1840 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KODA Event Log Interface</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --sidebar: #e9edf4;
+      --text: #202938;
+      --muted: #6b7280;
+      --line: #d9dee8;
+      --accent: #cc4b4b;
+      --accent-soft: #ffe8e8;
+      --blue: #315f8f;
+      --green: #2f8f66;
+      --shadow: 0 14px 35px rgba(30, 41, 59, 0.08);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      background: var(--sidebar);
+      border-right: 1px solid var(--line);
+      padding: 28px 22px;
+    }
+
+    .brand {
+      margin-bottom: 34px;
+    }
+
+    .brand small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 18px;
+      letter-spacing: 0.01em;
+    }
+
+    .nav {
+      display: grid;
+      gap: 10px;
+    }
+
+    .nav button {
+      width: 100%;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #354052;
+      text-align: left;
+      padding: 11px 12px;
+      border-radius: 6px;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .nav button.active {
+      background: #dbe2ee;
+      border-color: #cbd5e1;
+      color: #172033;
+      font-weight: 700;
+    }
+
+    .nav-hint {
+      margin-top: 28px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px solid #d6dce6;
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    main {
+      padding: 42px 56px 56px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 820px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      padding: 8px 11px;
+      border-radius: 999px;
+      border: 1px solid #c9d8e8;
+      background: #eef6ff;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--green);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .section {
+      border-top: 1px solid var(--line);
+      padding-top: 28px;
+      margin-top: 28px;
+    }
+
+    .section:first-of-type {
+      margin-top: 0;
+    }
+
+    h2 {
+      margin: 0 0 7px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+
+    .section-desc {
+      margin: 0 0 20px;
+      max-width: 840px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      max-width: 980px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 9px;
+      border: 1px solid #cfd6e2;
+      border-radius: 6px;
+      background: #fff;
+      min-height: 42px;
+    }
+
+    .checkbox-grid label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .checkbox-grid input {
+      width: 16px;
+      min-height: 16px;
+      height: 16px;
+      padding: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #374151;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #cfd6e2;
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text);
+      padding: 9px 11px;
+      font: inherit;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(49, 95, 143, 0.13);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.45;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 5px;
+      border: 1px solid #cfd6e2;
+      border-radius: 6px;
+      background: #f7f9fc;
+      min-height: 42px;
+    }
+
+    .segmented button {
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: #526070;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .segmented button.active {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+    }
+
+    .primary,
+    .secondary {
+      min-height: 42px;
+      border-radius: 6px;
+      padding: 10px 15px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .primary {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .secondary {
+      border: 1px solid #cfd6e2;
+      background: #fff;
+      color: #344054;
+    }
+
+    .subtle-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .status-box {
+      margin-top: 22px;
+      max-width: 980px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 16px;
+    }
+
+    .status-box strong {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .status-log {
+      min-height: 130px;
+      margin: 0;
+      padding: 12px;
+      border: 1px solid #d7deea;
+      border-radius: 6px;
+      background: #f8fafc;
+      color: #273244;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .upload {
+      min-height: 138px;
+      border: 1.5px dashed #b9c3d2;
+      border-radius: var(--radius);
+      background: #fbfcfe;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .upload.is-dragover {
+      border-color: var(--accent);
+      background: #eef6ff;
+      color: #273244;
+    }
+
+    .upload strong {
+      display: block;
+      color: #273244;
+      margin-bottom: 5px;
+    }
+
+    .progress-card {
+      margin-top: 22px;
+      max-width: 980px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-weight: 800;
+    }
+
+    .progress-track {
+      height: 9px;
+      border-radius: 999px;
+      background: #e9edf5;
+      overflow: hidden;
+    }
+
+    .progress-value {
+      width: 72%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--green));
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 980px;
+      margin-top: 20px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 13px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      font-size: 22px;
+    }
+
+    .stats-panel {
+      max-width: 980px;
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .stats-panel[hidden] {
+      display: none;
+    }
+
+    .stats-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stats-head strong {
+      font-size: 15px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-tile {
+      min-width: 0;
+      border: 1px solid #e0e5ee;
+      border-radius: 6px;
+      background: #f9fbfe;
+      padding: 12px;
+    }
+
+    .stat-tile span {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .stat-tile strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .stats-columns {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .stats-table {
+      border: 1px solid #e0e5ee;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .stats-table h3 {
+      margin: 0;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e0e5ee;
+      background: #f4f7fb;
+      font-size: 13px;
+    }
+
+    .stats-table table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .stats-table td {
+      padding: 8px 12px;
+      border-top: 1px solid #edf1f6;
+      vertical-align: top;
+    }
+
+    .stats-table tr:first-child td {
+      border-top: 0;
+    }
+
+    .stats-table td:last-child {
+      text-align: right;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .workflow {
+      max-width: 980px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      padding: 15px;
+    }
+
+    .step-number {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .step h3 {
+      margin: 0 0 7px;
+      font-size: 15px;
+    }
+
+    .step p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      main {
+        padding: 30px 22px;
+      }
+
+      .topbar,
+      .grid,
+      .summary-row,
+      .stats-grid,
+      .stats-columns,
+      .workflow {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <small>KODA OTRAF</small>
+        <strong>Create an Event Log</strong>
+      </div>
+
+      <nav class="nav" aria-label="Workflow tabs">
+        <button class="active" data-tab="retrieval">Data Retrieval</button>
+        <button data-tab="preprocessing">Preprocessing</button>
+        <button data-tab="eventlog">Event Log Builder</button>
+      </nav>
+
+      <div class="nav-hint">
+        Interface for retrieving KODA data, preprocessing protobuf feeds, and creating an object-centric event log.
+      </div>
+    </aside>
+
+    <main>
+      <section id="retrieval" class="tab-panel active">
+        <div class="topbar">
+          <div>
+            <h1>Data Retrieval</h1>
+            <p class="lead">Connect to Trafiklab once and download GTFS static data, TripUpdates, and VehiclePositions into one local pipeline folder.</p>
+          </div>
+          <div class="status-pill" id="pipeline-pill"><span class="dot"></span>Ready</div>
+        </div>
+
+        <div class="section">
+          <h2>API Configuration</h2>
+          <p class="section-desc">The API key is used for all KODA requests. This step only downloads GTFS static data, TripUpdates, and VehiclePositions into one local folder.</p>
+
+          <div class="grid">
+            <div class="field">
+              <label for="api-key">API key</label>
+              <input id="api-key" type="password" placeholder="Paste Trafiklab API key" aria-label="API key">
+            </div>
+
+            <div class="field">
+              <label for="operator">Operator</label>
+              <input id="operator" type="text" value="otraf" aria-label="Operator">
+            </div>
+
+            <div class="field">
+              <label for="data-date">Date</label>
+              <input id="data-date" type="date" value="2026-05-04">
+            </div>
+
+            <div class="field">
+              <label for="output-name">Output folder name</label>
+              <input id="output-name" type="text" value="koda_otraf_2026_05_04" aria-label="Output folder name">
+            </div>
+
+            <div class="field">
+              <label for="server-url">Local pipeline server</label>
+              <input id="server-url" type="text" value="http://127.0.0.1:8765" aria-label="Local pipeline server">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="download-data" type="button">Download All Data</button>
+            <button class="secondary" id="abort-download" type="button" disabled>Abort</button>
+            <button class="secondary" id="check-server" type="button">Check Server</button>
+            <span class="subtle-note">Requests: GTFS Static, TripUpdates, VehiclePositions</span>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <strong>Pipeline status</strong>
+          <pre class="status-log" id="pipeline-log">Waiting for configuration.</pre>
+        </div>
+
+        <div class="summary-row">
+          <div class="metric"><span>Selected operator</span><strong id="metric-operator">OTRAF</strong></div>
+          <div class="metric"><span>Requests</span><strong>3</strong></div>
+          <div class="metric"><span>CSV outputs</span><strong id="metric-csv">0</strong></div>
+          <div class="metric"><span>Status</span><strong id="metric-status">Ready</strong></div>
+        </div>
+      </section>
+
+      <section id="preprocessing" class="tab-panel">
+        <div class="topbar">
+          <div>
+            <h1>Preprocessing</h1>
+            <p class="lead">Transform the downloaded TripUpdates and VehiclePositions protobuf files into tabular CSV files.</p>
+          </div>
+          <div class="status-pill"><span class="dot"></span>CSV export</div>
+        </div>
+
+        <div class="section">
+          <h2>Input Files</h2>
+          <p class="section-desc">This step uses the raw folder created by Data Retrieval, unpacks TripUpdates and VehiclePositions, and then creates CSV files. Fastlane uses selected VehiclePosition seconds; Complete uses every available protobuf feed.</p>
+
+          <div class="grid">
+            <div class="upload" id="preprocess-folder-drop">
+              <div>
+                <strong>Downloaded raw data</strong>
+                Drop the pipeline folder here or use the path field below
+              </div>
+            </div>
+
+            <div class="grid">
+              <div class="field">
+                <label for="preprocess-folder-select">Existing pipeline folders</label>
+                <select id="preprocess-folder-select">
+                  <option value="">Load folders from server</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="preprocess-input-dir">Pipeline folder</label>
+                <input id="preprocess-input-dir" type="text" aria-label="Pipeline folder">
+              </div>
+
+              <div class="field">
+                <label for="vehicle-position-mode">VehiclePosition version</label>
+                <select id="vehicle-position-mode">
+                  <option value="complete" selected>Complete - all available seconds</option>
+                  <option value="fastlane">Fastlane - selected seconds</option>
+                </select>
+              </div>
+
+              <div class="field" id="fastlane-seconds-field">
+                <label>Fastlane seconds</label>
+                <div class="checkbox-grid">
+                  <label><input type="checkbox" name="vehicle-second" value="0" checked>00Z</label>
+                  <label><input type="checkbox" name="vehicle-second" value="9" checked>09Z</label>
+                  <label><input type="checkbox" name="vehicle-second" value="19" checked>19Z</label>
+                  <label><input type="checkbox" name="vehicle-second" value="29" checked>29Z</label>
+                  <label><input type="checkbox" name="vehicle-second" value="39" checked>39Z</label>
+                  <label><input type="checkbox" name="vehicle-second" value="49" checked>49Z</label>
+                  <label><input type="checkbox" name="vehicle-second" value="59" checked>59Z</label>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="format">Export format</label>
+                <select id="format">
+                  <option selected>CSV</option>
+                  <option>CSV + summary tables</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="preprocess-data" type="button">Process Data</button>
+            <button class="secondary" id="abort-preprocess" type="button" disabled>Abort</button>
+            <button class="secondary" id="use-suggested-folder" type="button">Use Suggested Folder</button>
+            <button class="secondary" id="refresh-pipeline-folders" type="button">Refresh Folders</button>
+            <button class="secondary" id="download-csv-files" type="button">Download CSV Files</button>
+            <span class="subtle-note">Output includes trip updates and vehicle position updates with occupancy and speed attributes</span>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <strong>Preprocessing status</strong>
+          <pre class="status-log" id="preprocess-log">Waiting for downloaded raw data.</pre>
+        </div>
+
+      </section>
+
+      <section id="eventlog" class="tab-panel">
+        <div class="topbar">
+          <div>
+            <h1>Event Log Builder</h1>
+            <p class="lead">Choose the standard Event Builder or Event Builder+ to construct the object-centric KODA event log.</p>
+          </div>
+          <div class="status-pill"><span class="dot"></span>OCEL output</div>
+        </div>
+
+        <div class="section">
+          <h2>Build Object-Centric Event Log</h2>
+          <p class="section-desc">Event Builder uses the previous KODA algorithm. Event Builder+ uses the newer robust algorithm with stationary and repositioning pause activities, so no layover threshold is needed there.</p>
+
+          <div class="grid">
+            <div class="upload">
+              <div>
+                <strong>Event Builder</strong>
+                Uses KODA.py with the previous no-layover e2o event logic
+              </div>
+            </div>
+
+            <div class="upload">
+              <div>
+                <strong>Event Builder+</strong>
+                Uses KODA_Robust.py with the newest optimized activity logic
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="event-folder-select">Existing pipeline folders</label>
+              <select id="event-folder-select">
+                <option value="">Load folders from server</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="event-pipeline-dir">Pipeline folder</label>
+              <input id="event-pipeline-dir" type="text" aria-label="Event log pipeline folder">
+            </div>
+
+            <div class="upload" id="event-folder-drop">
+              <div>
+                <strong>Pipeline folder</strong>
+                Drop the preprocessed pipeline folder here
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="event-builder-variant">Builder variant</label>
+              <select id="event-builder-variant">
+                <option value="standard" selected>Event Builder</option>
+                <option value="plus">Event Builder+</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="event-vehicle-position-source">VehiclePositions source</label>
+              <select id="event-vehicle-position-source">
+                <option value="complete">Complete preprocessing</option>
+                <option value="fastlane">Fastlane preprocessing</option>
+                <option value="ultra_fastlane" selected>Ultra Fastlane - constant trip occupancy</option>
+                <option value="legacy">Legacy shared folder</option>
+              </select>
+            </div>
+
+            <div class="field" id="layover-field">
+              <label for="layover">Layover threshold</label>
+              <select id="layover">
+                <option>30 minutes</option>
+                <option selected>60 minutes</option>
+                <option>3 hours</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="output">OCEL output</label>
+              <select id="output">
+                <option selected>OCEL JSON + overview CSV</option>
+                <option>OCEL JSON only</option>
+                <option>Overview CSV only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="workflow">
+            <div class="step">
+              <div class="step-number">1</div>
+              <h3>Join static and real-time data</h3>
+              <p>Stops, routes, trips, timestamps, delay, occupancy, and speed are aligned by trip and stop sequence.</p>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <h3>Create events and objects</h3>
+              <p>Arrival, departure, parking, direction change, vehicle, trip, route, and stop objects are created.</p>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <h3>Export event log</h3>
+              <p>The generated event log can be downloaded and used for analysis, mining, and evaluation.</p>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="build-event-log" type="button">Generate Event Log</button>
+            <button class="secondary" id="abort-event-log" type="button" disabled>Abort</button>
+            <button class="secondary" id="download-ocel" type="button">Download OCEL</button>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <strong>Event builder status</strong>
+          <pre class="status-log" id="event-log">Waiting for builder selection.</pre>
+        </div>
+
+        <div class="stats-panel" id="event-stats-panel" hidden>
+          <div class="stats-head">
+            <strong>Event log stats</strong>
+            <div class="status-pill"><span class="dot"></span>Summary</div>
+          </div>
+          <div class="stats-grid" id="event-stats-grid"></div>
+          <div class="stats-columns">
+            <div class="stats-table">
+              <h3>Activity Types</h3>
+              <table>
+                <tbody id="activity-stats-body"></tbody>
+              </table>
+            </div>
+            <div class="stats-table">
+              <h3>Object Types</h3>
+              <table>
+                <tbody id="object-stats-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const tabButtons = document.querySelectorAll(".nav button");
+    const panels = document.querySelectorAll(".tab-panel");
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const target = button.dataset.tab;
+        tabButtons.forEach((item) => item.classList.remove("active"));
+        panels.forEach((panel) => panel.classList.remove("active"));
+        button.classList.add("active");
+        document.getElementById(target).classList.add("active");
+      });
+    });
+
+    const pipelineLog = document.getElementById("pipeline-log");
+    const pipelinePill = document.getElementById("pipeline-pill");
+    const preprocessLog = document.getElementById("preprocess-log");
+    const eventLog = document.getElementById("event-log");
+    const eventStatsPanel = document.getElementById("event-stats-panel");
+    const eventStatsGrid = document.getElementById("event-stats-grid");
+    const activityStatsBody = document.getElementById("activity-stats-body");
+    const objectStatsBody = document.getElementById("object-stats-body");
+    const metricOperator = document.getElementById("metric-operator");
+    const metricCsv = document.getElementById("metric-csv");
+    const metricStatus = document.getElementById("metric-status");
+    const downloadDataButton = document.getElementById("download-data");
+    const preprocessDataButton = document.getElementById("preprocess-data");
+    const abortDownloadButton = document.getElementById("abort-download");
+    const abortPreprocessButton = document.getElementById("abort-preprocess");
+    const buildEventLogButton = document.getElementById("build-event-log");
+    const abortEventLogButton = document.getElementById("abort-event-log");
+    const downloadCsvFilesButton = document.getElementById("download-csv-files");
+    const downloadOcelButton = document.getElementById("download-ocel");
+    const checkServerButton = document.getElementById("check-server");
+    const eventBuilderVariant = document.getElementById("event-builder-variant");
+    const eventVehiclePositionSource = document.getElementById("event-vehicle-position-source");
+    const layoverField = document.getElementById("layover-field");
+    const outputNameInput = document.getElementById("output-name");
+    const preprocessInputDir = document.getElementById("preprocess-input-dir");
+    const eventPipelineDir = document.getElementById("event-pipeline-dir");
+    const preprocessFolderSelect = document.getElementById("preprocess-folder-select");
+    const eventFolderSelect = document.getElementById("event-folder-select");
+    const preprocessFolderDrop = document.getElementById("preprocess-folder-drop");
+    const eventFolderDrop = document.getElementById("event-folder-drop");
+    const useSuggestedFolderButton = document.getElementById("use-suggested-folder");
+    const refreshPipelineFoldersButton = document.getElementById("refresh-pipeline-folders");
+    const vehiclePositionMode = document.getElementById("vehicle-position-mode");
+    const fastlaneSecondsField = document.getElementById("fastlane-seconds-field");
+
+    let currentDownloadJobId = null;
+    let currentPreprocessJobId = null;
+    let currentEventLogJobId = null;
+    let pipelineFolderIsManual = false;
+    let pipelineFoldersCache = [];
+    const activeIndicators = new Map();
+
+    function serverUrl() {
+      return document.getElementById("server-url").value.replace(/\/$/, "");
+    }
+
+    function saveStatusLog(key, value) {
+      localStorage.setItem(key, value);
+    }
+
+    function writePipelineLog(value) {
+      pipelineLog.textContent = value;
+      saveStatusLog("kodaPipelineLog", value);
+    }
+
+    function writePreprocessLog(value) {
+      preprocessLog.textContent = value;
+      saveStatusLog("kodaPreprocessLog", value);
+    }
+
+    function writeEventLog(value) {
+      eventLog.textContent = value;
+      saveStatusLog("kodaEventLog", value);
+    }
+
+    function startRunningIndicator(key, logWriter, baseText) {
+      stopRunningIndicator(key);
+      updateRunningIndicator(key, logWriter, baseText);
+    }
+
+    function updateRunningIndicator(key, logWriter, baseText) {
+      const existing = activeIndicators.get(key);
+      if (existing) {
+        existing.baseText = baseText;
+        existing.logWriter = logWriter;
+        return;
+      }
+
+      let tick = 0;
+      const render = () => {
+        const current = activeIndicators.get(key);
+        if (!current) return;
+        const dots = ".".repeat(tick % 4);
+        current.logWriter(`${current.baseText}\n\nStill running${dots}`);
+        tick += 1;
+      };
+      activeIndicators.set(key, {
+        baseText,
+        logWriter,
+        intervalId: window.setInterval(render, 700),
+      });
+      render();
+    }
+
+    function stopRunningIndicator(key) {
+      const indicator = activeIndicators.get(key);
+      if (indicator) {
+        window.clearInterval(indicator.intervalId);
+        activeIndicators.delete(key);
+      }
+    }
+
+    function setStatus(text, logText) {
+      pipelinePill.lastChild.textContent = text;
+      metricStatus.textContent = text;
+      if (logText) {
+        writePipelineLog(logText);
+      }
+    }
+
+    function suggestedPipelineFolder() {
+      const outputName = outputNameInput.value.trim() || "koda";
+      return outputName;
+    }
+
+    function updateSuggestedPipelineFolder(force = false) {
+      if (force || !pipelineFolderIsManual || !preprocessInputDir.value.trim()) {
+        setPipelineFolder(suggestedPipelineFolder());
+        pipelineFolderIsManual = false;
+      }
+    }
+
+    function rememberPipelineFolder(runDir) {
+      if (!runDir) return;
+      setPipelineFolder(runDir);
+      pipelineFolderIsManual = true;
+      localStorage.setItem("kodaLastPipelineFolder", runDir);
+      syncPipelineFolderSelects(runDir);
+    }
+
+    function setPipelineFolder(value) {
+      preprocessInputDir.value = value;
+      eventPipelineDir.value = value;
+      syncPipelineFolderSelects(value);
+    }
+
+    function pipelineFolder() {
+      return eventPipelineDir.value.trim() || preprocessInputDir.value.trim();
+    }
+
+    function pipelineFolderLabel(folder) {
+      const tags = [];
+      if (folder.operator) tags.push(folder.operator.toUpperCase());
+      if (folder.date) tags.push(folder.date);
+      if (folder.has_raw) tags.push("raw");
+      if (folder.has_trip_updates_csv) tags.push("trip csv");
+      if (folder.has_complete_vehicle_positions) tags.push("complete");
+      if (folder.has_fastlane_vehicle_positions) tags.push("fastlane");
+      if (folder.has_ultra_fastlane) tags.push("ultra");
+      return `${folder.name}${tags.length ? ` (${tags.join(", ")})` : ""}`;
+    }
+
+    function fillPipelineFolderSelect(select, folders) {
+      const currentValue = select.value;
+      select.innerHTML = "";
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = folders.length ? "Select existing folder" : "No folders found";
+      select.appendChild(placeholder);
+
+      folders.forEach((folder) => {
+        const option = document.createElement("option");
+        option.value = folder.path;
+        option.textContent = pipelineFolderLabel(folder);
+        option.title = folder.path;
+        if (folder.operator) option.dataset.operator = folder.operator;
+        if (folder.date) option.dataset.date = folder.date;
+        select.appendChild(option);
+      });
+
+      if (currentValue && folders.some((folder) => folder.path === currentValue)) {
+        select.value = currentValue;
+      } else {
+        syncPipelineFolderSelects(pipelineFolder());
+      }
+    }
+
+    function normalizePipelineFolderFromList(folders, value = pipelineFolder()) {
+      const current = value;
+      if (!current || isAbsolutePath(current)) return;
+
+      const match = folders.find((folder) => folder.name === current || folder.path.endsWith(`/${current}`));
+      if (match) {
+        setPipelineFolder(match.path);
+        pipelineFolderIsManual = true;
+        localStorage.setItem("kodaLastPipelineFolder", match.path);
+        applyPipelineFolderMetadata(match.path);
+      }
+    }
+
+    async function normalizeDroppedPipelineFolder(value) {
+      try {
+        const response = await fetch(`${serverUrl()}/api/pipeline-folders`);
+        const data = await response.json();
+        if (response.ok && data.ok) {
+          const cleanValue = value.replace(/\/$/, "");
+          const folderName = cleanValue.split(/[\\/]/).pop();
+          const match = data.folders.find(
+            (folder) =>
+              folder.path === cleanValue ||
+              folder.name === cleanValue ||
+              folder.name === folderName ||
+              folder.path.endsWith(`/${folderName}`)
+          );
+          if (match) {
+            setPipelineFolder(match.path);
+            localStorage.setItem("kodaLastPipelineFolder", match.path);
+            syncPipelineFolderSelects(match.path);
+            applyPipelineFolderMetadata(match.path);
+            return match.path;
+          }
+        }
+      } catch (error) {
+        // The backend also normalizes pipeline folder names, so the drop can still work.
+      }
+      return value;
+    }
+
+    function syncPipelineFolderSelects(value) {
+      [preprocessFolderSelect, eventFolderSelect].forEach((select) => {
+        if (!select) return;
+        const hasOption = Array.from(select.options).some((option) => option.value === value);
+        select.value = hasOption ? value : "";
+      });
+    }
+
+    function applyPipelineFolderMetadata(path) {
+      const folder = pipelineFoldersCache.find((item) => item.path === path);
+      if (!folder) return;
+      if (folder.operator) {
+        document.getElementById("operator").value = folder.operator;
+        metricOperator.textContent = folder.operator.toUpperCase();
+      }
+      if (folder.date) {
+        document.getElementById("data-date").value = folder.date;
+      }
+    }
+
+    async function refreshPipelineFolders(logWriter = null) {
+      const response = await fetch(`${serverUrl()}/api/pipeline-folders`);
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      fillPipelineFolderSelect(preprocessFolderSelect, data.folders);
+      fillPipelineFolderSelect(eventFolderSelect, data.folders);
+      pipelineFoldersCache = data.folders;
+      normalizePipelineFolderFromList(data.folders);
+      syncPipelineFolderSelects(pipelineFolder());
+      applyPipelineFolderMetadata(pipelineFolder());
+
+      if (logWriter) {
+        logWriter([
+          `Found ${data.folders.length} pipeline folder(s).`,
+          ...data.folders.slice(0, 12).map((folder) => `- ${pipelineFolderLabel(folder)}: ${folder.path}`),
+        ].join("\n"));
+      }
+    }
+
+    function isAbsolutePath(value) {
+      return value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value);
+    }
+
+    function requestConfig() {
+      const variant = eventBuilderVariant.value;
+      const selectedVehicleSeconds = Array.from(
+        document.querySelectorAll('input[name="vehicle-second"]:checked')
+      ).map((input) => Number(input.value));
+      const config = {
+        api_key: document.getElementById("api-key").value,
+        operator: document.getElementById("operator").value,
+        date: document.getElementById("data-date").value,
+        output_name: document.getElementById("output-name").value,
+        vehicle_position_mode: vehiclePositionMode.value,
+        vehicle_position_seconds: selectedVehicleSeconds,
+        event_builder_variant: variant,
+        event_vehicle_position_source: eventVehiclePositionSource.value,
+      };
+
+      if (pipelineFolder()) {
+        config.preprocess_input_dir = pipelineFolder();
+      }
+
+      if (variant !== "plus") {
+        config.layover_threshold = document.getElementById("layover").value;
+      }
+
+      return config;
+    }
+
+    function downloadUrl(type) {
+      const config = requestConfig();
+      const params = new URLSearchParams({
+        type,
+        variant: config.event_builder_variant,
+        operator: config.operator,
+        date: config.date,
+        output_name: config.output_name,
+      });
+
+      if (config.preprocess_input_dir) {
+        params.set("preprocess_input_dir", config.preprocess_input_dir);
+      }
+
+      return `${serverUrl()}/api/download-output?${params.toString()}`;
+    }
+
+    function formatBytes(bytes) {
+      if (!Number.isFinite(bytes)) return "-";
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    }
+
+    function formatNumber(value) {
+      if (!Number.isFinite(Number(value))) return "-";
+      return new Intl.NumberFormat("en-US").format(Number(value));
+    }
+
+    function renderStatsRows(target, counts, limit = 10) {
+      const entries = Object.entries(counts || {}).slice(0, limit);
+      target.innerHTML = "";
+
+      if (!entries.length) {
+        const row = document.createElement("tr");
+        row.innerHTML = "<td>None</td><td>-</td>";
+        target.appendChild(row);
+        return;
+      }
+
+      entries.forEach(([name, count]) => {
+        const row = document.createElement("tr");
+        const labelCell = document.createElement("td");
+        const valueCell = document.createElement("td");
+        labelCell.textContent = name;
+        valueCell.textContent = formatNumber(count);
+        row.append(labelCell, valueCell);
+        target.appendChild(row);
+      });
+    }
+
+    function renderEventStats(summary) {
+      if (!summary) {
+        eventStatsPanel.hidden = true;
+        eventStatsGrid.innerHTML = "";
+        activityStatsBody.innerHTML = "";
+        objectStatsBody.innerHTML = "";
+        return;
+      }
+
+      eventStatsPanel.hidden = false;
+      const metrics = [
+        ["Events", summary.total_events],
+        ["Objects", summary.total_objects],
+        ["Activity Types", summary.total_activity_types],
+        ["Event Types", summary.total_event_types],
+        ["Object Types", summary.total_object_types],
+        ["Relationships", summary.total_event_object_relationships],
+      ];
+
+      eventStatsGrid.innerHTML = "";
+      metrics.forEach(([label, value]) => {
+        const tile = document.createElement("div");
+        tile.className = "stat-tile";
+        const tileLabel = document.createElement("span");
+        const tileValue = document.createElement("strong");
+        tileLabel.textContent = label;
+        tileValue.textContent = formatNumber(value);
+        tile.append(tileLabel, tileValue);
+        eventStatsGrid.appendChild(tile);
+      });
+
+      renderStatsRows(activityStatsBody, summary.activity_type_counts);
+      renderStatsRows(objectStatsBody, summary.object_type_counts);
+    }
+
+    function renderDownloadResult(result) {
+      const requests = result.requests;
+
+      return [
+        "Requests granted:",
+        `- GTFS Static: HTTP ${requests.gtfs_static.status}, ${formatBytes(requests.gtfs_static.bytes)}`,
+        `- TripUpdates: HTTP ${requests.trip_updates.status}, ${formatBytes(requests.trip_updates.bytes)}`,
+        `- VehiclePositions: HTTP ${requests.vehicle_positions.status}, ${formatBytes(requests.vehicle_positions.bytes)}`,
+        "",
+        `Output folder: ${result.run_dir}`,
+        "",
+        "Raw downloads:",
+        `- GTFS Static: ${requests.gtfs_static.file}`,
+        `- TripUpdates: ${requests.trip_updates.file}`,
+        `- VehiclePositions: ${requests.vehicle_positions.file}`,
+        "",
+        "Next step: open Preprocessing and run Process Data.",
+      ].join("\n");
+    }
+
+    function renderPreprocessResult(result) {
+      const vehicleCsvCount = result.csv.vehicle_positions.length;
+      const tripCsvCount = result.csv.trip_updates ? 1 : 0;
+      const occupancyInfo = result.csv.trip_occupancy_ultra_fastlane_info;
+      const spreadCounts = occupancyInfo?.occupancy_spread_counts || {};
+      const tableSummaries = result.csv.table_summaries || [];
+      metricCsv.textContent = String(vehicleCsvCount + tripCsvCount);
+
+      return [
+        "Preprocessing completed:",
+        `Output folder: ${result.run_dir}`,
+        `VehiclePositions version: ${result.csv.vehicle_position_mode === "fastlane" ? "Fastlane" : "Complete"}`,
+        `VehiclePositions folder: ${result.csv.vehicle_positions_dir}`,
+        `Ultra Fastlane occupancy table: ${result.csv.trip_occupancy_ultra_fastlane || "no constant trip occupancy table created"}`,
+        "",
+        "Table sizes:",
+        ...(tableSummaries.length
+          ? tableSummaries.map((table) => {
+              const rows = Number.isFinite(Number(table.rows)) ? `, ${formatNumber(table.rows)} rows` : "";
+              return `- ${table.name}: ${formatBytes(table.bytes)}${rows}`;
+            })
+          : ["- no table summaries available"]),
+        ...(occupancyInfo ? [
+          "",
+          "Occupancy spread:",
+          `Trips with occupancy: ${occupancyInfo.trips_with_occupancy}`,
+          `Trips with occupancy spread 0: ${occupancyInfo.constant_occupancy_trips}`,
+          `Trips with variable occupancy: ${occupancyInfo.variable_occupancy_trips}`,
+          "Occupancy spread distribution:",
+          ...Object.entries(spreadCounts).map(([spread, count]) => `- spread ${spread}: ${count} trip(s)`),
+        ] : []),
+        ...(result.csv.vehicle_position_mode === "fastlane"
+          ? [`Fastlane seconds: ${result.csv.vehicle_position_seconds.map((second) => `${String(second).padStart(2, "0")}Z`).join(", ")}`]
+          : []),
+        "",
+        "CSV outputs:",
+        `- TripUpdates: ${result.csv.trip_updates || "no protobuf rows found"}`,
+        ...result.csv.vehicle_positions.map((file) => `- VehiclePositions: ${file}`),
+        ...(result.csv.trip_occupancy_ultra_fastlane
+          ? [`- Ultra Fastlane occupancy: ${result.csv.trip_occupancy_ultra_fastlane}`]
+          : []),
+      ].join("\n");
+    }
+
+    function renderCountTable(title, counts) {
+      const entries = Object.entries(counts || {});
+      if (!entries.length) {
+        return [`${title}:`, "- none"];
+      }
+
+      return [
+        `${title}:`,
+        ...entries.map(([name, count]) => `- ${name}: ${count}`),
+      ];
+    }
+
+    function renderEventLogResult(result) {
+      const summary = result.summary;
+      renderEventStats(summary);
+      return [
+        "Event log build completed:",
+        `Variant: ${result.variant === "plus" ? "Event Builder+" : "Event Builder"}`,
+        `VehiclePositions source: ${result.vehicle_position_source || "unknown"}`,
+        `VehiclePositions input: ${result.vehicle_positions_input || "unknown"}`,
+        `Script: ${result.script}`,
+        "",
+        "Outputs:",
+        ...(result.outputs.length ? result.outputs.map((file) => `- ${file}`) : ["- No expected OCEL output file found yet"]),
+        ...(summary ? [
+          "",
+          "Event log summary:",
+          `- Events total: ${summary.total_events}`,
+          `- Objects total: ${summary.total_objects}`,
+          `- Activity types total: ${summary.total_activity_types}`,
+          `- Event types total: ${summary.total_event_types}`,
+          `- Object types total: ${summary.total_object_types}`,
+          `- Event-object relationships total: ${summary.total_event_object_relationships}`,
+          "",
+          ...renderCountTable("Activity type counts", summary.activity_type_counts),
+          "",
+          ...renderCountTable("Object type counts", summary.object_type_counts),
+        ] : [
+          "",
+          "Event log summary: not available.",
+        ]),
+      ].join("\n");
+    }
+
+    async function pollJob(jobId, onUpdate, onDone, runningIndicator = null) {
+      if (runningIndicator) {
+        startRunningIndicator(
+          runningIndicator.key,
+          runningIndicator.logWriter,
+          runningIndicator.baseText
+        );
+      }
+      while (true) {
+        let response;
+        try {
+          response = await fetch(`${serverUrl()}/api/job-status?id=${encodeURIComponent(jobId)}`);
+        } catch (error) {
+          throw new Error(
+            `Could not reach the local pipeline server while polling job status. ` +
+            `The server or Docker container may have stopped. Original error: ${error.message}`
+          );
+        }
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        const job = data.job;
+        onUpdate(job);
+        if (runningIndicator) {
+          updateRunningIndicator(
+            runningIndicator.key,
+            runningIndicator.logWriter,
+            renderJobProgress(job)
+          );
+        }
+
+        if (job.status === "done") {
+          if (runningIndicator) stopRunningIndicator(runningIndicator.key);
+          onDone(job.result, job);
+          return;
+        }
+
+        if (job.status === "error") {
+          if (runningIndicator) stopRunningIndicator(runningIndicator.key);
+          throw new Error(job.error || "Job failed.");
+        }
+
+        if (job.status === "aborted") {
+          if (runningIndicator) stopRunningIndicator(runningIndicator.key);
+          throw new Error(job.error || "Job aborted.");
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 700));
+      }
+    }
+
+    async function abortJob(jobId, logWriter) {
+      if (!jobId) return;
+      let currentLog = preprocessLog.textContent;
+      if (logWriter === writePipelineLog) currentLog = pipelineLog.textContent;
+      if (logWriter === writeEventLog) currentLog = eventLog.textContent;
+      logWriter(`${currentLog}\nAbort requested...`);
+      const response = await fetch(`${serverUrl()}/api/cancel-job`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_id: jobId }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+    }
+
+    function renderJobProgress(job) {
+      return [
+        `Progress: ${job.progress}%`,
+        "",
+        ...job.messages,
+      ].join("\n");
+    }
+
+    function appendJobResult(job, resultText) {
+      return [
+        renderJobProgress(job),
+        "",
+        "Result:",
+        resultText,
+      ].join("\n");
+    }
+
+    const savedPipelineLog = localStorage.getItem("kodaPipelineLog");
+    if (savedPipelineLog) {
+      pipelineLog.textContent = savedPipelineLog;
+    }
+
+    const savedPreprocessLog = localStorage.getItem("kodaPreprocessLog");
+    if (savedPreprocessLog) {
+      preprocessLog.textContent = savedPreprocessLog;
+    }
+
+    const savedEventLog = localStorage.getItem("kodaEventLog");
+    if (savedEventLog) {
+      eventLog.textContent = savedEventLog;
+    }
+
+    const savedPipelineFolder = localStorage.getItem("kodaLastPipelineFolder");
+    if (savedPipelineFolder) {
+      setPipelineFolder(savedPipelineFolder);
+    } else {
+      updateSuggestedPipelineFolder(true);
+    }
+
+    outputNameInput.addEventListener("input", () => updateSuggestedPipelineFolder());
+    useSuggestedFolderButton.addEventListener("click", () => updateSuggestedPipelineFolder(true));
+    refreshPipelineFoldersButton.addEventListener("click", async () => {
+      try {
+        await refreshPipelineFolders(writePreprocessLog);
+      } catch (error) {
+        writePreprocessLog(`Could not load pipeline folders:\n${error.message}`);
+      }
+    });
+    preprocessFolderSelect.addEventListener("change", () => {
+      if (!preprocessFolderSelect.value) return;
+      setPipelineFolder(preprocessFolderSelect.value);
+      pipelineFolderIsManual = true;
+      localStorage.setItem("kodaLastPipelineFolder", preprocessFolderSelect.value);
+      applyPipelineFolderMetadata(preprocessFolderSelect.value);
+      writePreprocessLog(`Pipeline folder selected:\n${preprocessFolderSelect.value}`);
+    });
+    eventFolderSelect.addEventListener("change", () => {
+      if (!eventFolderSelect.value) return;
+      setPipelineFolder(eventFolderSelect.value);
+      pipelineFolderIsManual = true;
+      localStorage.setItem("kodaLastPipelineFolder", eventFolderSelect.value);
+      applyPipelineFolderMetadata(eventFolderSelect.value);
+      writeEventLog(`Pipeline folder selected:\n${eventFolderSelect.value}`);
+    });
+    preprocessInputDir.addEventListener("input", () => {
+      eventPipelineDir.value = preprocessInputDir.value;
+      pipelineFolderIsManual = true;
+      syncPipelineFolderSelects(preprocessInputDir.value);
+    });
+    eventPipelineDir.addEventListener("input", () => {
+      preprocessInputDir.value = eventPipelineDir.value;
+      pipelineFolderIsManual = true;
+      syncPipelineFolderSelects(eventPipelineDir.value);
+    });
+
+    function droppedPath(event) {
+      const textPath = event.dataTransfer.getData("text/plain").trim();
+      if (textPath) return textPath;
+
+      const file = event.dataTransfer.files && event.dataTransfer.files[0];
+      if (file && file.path) return file.path;
+      if (file && file.webkitRelativePath) {
+        return file.webkitRelativePath.split("/")[0];
+      }
+
+      const item = event.dataTransfer.items && event.dataTransfer.items[0];
+      if (item && item.webkitGetAsEntry) {
+        const entry = item.webkitGetAsEntry();
+        if (entry && entry.fullPath) return entry.fullPath.replace(/^\//, "");
+      }
+
+      return "";
+    }
+
+    function enableFolderDrop(dropTarget, logWriter) {
+      if (!dropTarget) return;
+      ["dragenter", "dragover"].forEach((eventName) => {
+        dropTarget.addEventListener(eventName, (event) => {
+          event.preventDefault();
+          dropTarget.classList.add("is-dragover");
+        });
+      });
+      ["dragleave", "drop"].forEach((eventName) => {
+        dropTarget.addEventListener(eventName, () => {
+          dropTarget.classList.remove("is-dragover");
+        });
+      });
+      dropTarget.addEventListener("drop", async (event) => {
+        event.preventDefault();
+        const path = droppedPath(event);
+        if (path) {
+          setPipelineFolder(path);
+          const normalizedPath = await normalizeDroppedPipelineFolder(path);
+          pipelineFolderIsManual = true;
+          localStorage.setItem("kodaLastPipelineFolder", normalizedPath);
+          logWriter(`Pipeline folder selected:\n${normalizedPath}`);
+        } else {
+          logWriter("Pipeline folder could not be read from the drop. Paste the folder path into the field.");
+        }
+      });
+    }
+
+    enableFolderDrop(preprocessFolderDrop, writePreprocessLog);
+    enableFolderDrop(eventFolderDrop, writeEventLog);
+    refreshPipelineFolders().catch(() => {});
+
+    function updateBuilderVariantUi() {
+      layoverField.style.display = eventBuilderVariant.value === "plus" ? "none" : "block";
+    }
+
+    eventBuilderVariant.addEventListener("change", updateBuilderVariantUi);
+    updateBuilderVariantUi();
+
+    function updateVehiclePositionModeUi() {
+      fastlaneSecondsField.style.display = vehiclePositionMode.value === "fastlane" ? "block" : "none";
+    }
+
+    vehiclePositionMode.addEventListener("change", updateVehiclePositionModeUi);
+    updateVehiclePositionModeUi();
+
+    checkServerButton.addEventListener("click", async () => {
+      setStatus("Checking", "Checking local pipeline server...");
+      try {
+        const response = await fetch(`${serverUrl()}/api/health`);
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+        setStatus("Server ready", `Local server is ready.\nDownload root: ${data.download_root}`);
+      } catch (error) {
+        setStatus(
+          "Server missing",
+          `Local server is not reachable yet.\nStart it with:\n.venv/bin/python koda_pipeline_server.py\n\nDetails: ${error.message}`
+        );
+      }
+    });
+
+    abortDownloadButton.addEventListener("click", async () => {
+      abortDownloadButton.disabled = true;
+      try {
+        await abortJob(currentDownloadJobId, writePipelineLog);
+        setStatus("Aborting");
+      } catch (error) {
+        setStatus("Abort failed", `${pipelineLog.textContent}\nAbort failed: ${error.message}`);
+      }
+    });
+
+    abortPreprocessButton.addEventListener("click", async () => {
+      abortPreprocessButton.disabled = true;
+      try {
+        await abortJob(currentPreprocessJobId, writePreprocessLog);
+      } catch (error) {
+        writePreprocessLog(`${preprocessLog.textContent}\nAbort failed: ${error.message}`);
+      }
+    });
+
+    abortEventLogButton.addEventListener("click", async () => {
+      abortEventLogButton.disabled = true;
+      try {
+        await abortJob(currentEventLogJobId, writeEventLog);
+      } catch (error) {
+        writeEventLog(`${eventLog.textContent}\nAbort failed: ${error.message}`);
+      }
+    });
+
+    downloadCsvFilesButton.addEventListener("click", () => {
+      window.location.href = downloadUrl("csv");
+    });
+
+    downloadOcelButton.addEventListener("click", () => {
+      window.location.href = downloadUrl("ocel");
+    });
+
+    downloadDataButton.addEventListener("click", async () => {
+      const config = requestConfig();
+      metricOperator.textContent = config.operator.toUpperCase();
+
+      if (!config.api_key || !config.date || !config.operator) {
+        setStatus("Missing input", "API key, operator, and date are required.");
+        return;
+      }
+
+      downloadDataButton.disabled = true;
+      abortDownloadButton.disabled = false;
+      setStatus(
+        "Requesting",
+        [
+          "Downloading all KODA resources...",
+          "- GTFS Static",
+          "- TripUpdates",
+          "- VehiclePositions",
+          "",
+          "No CSV preprocessing is done in this step.",
+        ].join("\n")
+      );
+
+      try {
+        const response = await fetch(`${serverUrl()}/api/download-data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        currentDownloadJobId = data.job_id;
+        await pollJob(
+          data.job_id,
+          (job) => setStatus("Downloading", renderJobProgress(job)),
+          (result, job) => {
+            rememberPipelineFolder(result.run_dir);
+            setStatus("Downloaded", appendJobResult(job, renderDownloadResult(result)));
+            refreshPipelineFolders().catch(() => {});
+          },
+          {
+            key: "download",
+            logWriter: writePipelineLog,
+            baseText: "Downloading all KODA resources...",
+          }
+        );
+      } catch (error) {
+        setStatus(
+          "Action needed",
+          [
+            "Download was not completed.",
+            "This can mean the API key/operator/date was rejected, the local server is not running, or the network request failed.",
+            "",
+            `Details: ${error.message}`,
+          ].join("\n")
+        );
+      } finally {
+        stopRunningIndicator("download");
+        downloadDataButton.disabled = false;
+        abortDownloadButton.disabled = true;
+        currentDownloadJobId = null;
+      }
+    });
+
+    preprocessDataButton.addEventListener("click", async () => {
+      const config = requestConfig();
+      metricOperator.textContent = config.operator.toUpperCase();
+
+      if (!config.date || !config.operator || !config.output_name) {
+        writePreprocessLog("Operator, date, and output folder name are required.");
+        return;
+      }
+
+      preprocessDataButton.disabled = true;
+      abortPreprocessButton.disabled = false;
+      writePreprocessLog([
+        "Processing downloaded protobuf files...",
+        "- TripUpdates to CSV",
+        "- VehiclePositions series to CSV",
+      ].join("\n"));
+
+      try {
+        const response = await fetch(`${serverUrl()}/api/preprocess-data`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        currentPreprocessJobId = data.job_id;
+        await pollJob(
+          data.job_id,
+          (job) => {
+            writePreprocessLog(renderJobProgress(job));
+          },
+          (result, job) => {
+            writePreprocessLog(appendJobResult(job, renderPreprocessResult(result)));
+            setStatus("CSV ready");
+          },
+          {
+            key: "preprocess",
+            logWriter: writePreprocessLog,
+            baseText: "Processing downloaded protobuf files...",
+          }
+        );
+      } catch (error) {
+        writePreprocessLog([
+          "Preprocessing was not completed.",
+          "Make sure Data Retrieval has already downloaded raw TripUpdates and VehiclePositions for this output folder.",
+          "",
+          `Details: ${error.message}`,
+        ].join("\n"));
+      } finally {
+        stopRunningIndicator("preprocess");
+        preprocessDataButton.disabled = false;
+        abortPreprocessButton.disabled = true;
+        currentPreprocessJobId = null;
+      }
+    });
+
+    buildEventLogButton.addEventListener("click", async () => {
+      const config = requestConfig();
+      const variantLabel = config.event_builder_variant === "plus" ? "Event Builder+" : "Event Builder";
+
+      buildEventLogButton.disabled = true;
+      abortEventLogButton.disabled = false;
+      renderEventStats(null);
+      writeEventLog(`Starting ${variantLabel}...`);
+
+      try {
+        const response = await fetch(`${serverUrl()}/api/build-event-log`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(config),
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+        currentEventLogJobId = data.job_id;
+        await pollJob(
+          data.job_id,
+          (job) => {
+            writeEventLog(renderJobProgress(job));
+          },
+          (result, job) => {
+            writeEventLog(appendJobResult(job, renderEventLogResult(result)));
+          },
+          {
+            key: "eventlog",
+            logWriter: writeEventLog,
+            baseText: `Starting ${variantLabel}...`,
+          }
+        );
+      } catch (error) {
+        writeEventLog([
+          "Event log build was not completed.",
+          "",
+          `Details: ${error.message}`,
+        ].join("\n"));
+      } finally {
+        stopRunningIndicator("eventlog");
+        buildEventLogButton.disabled = false;
+        abortEventLogButton.disabled = true;
+        currentEventLogJobId = null;
+      }
+    });
+  </script>
+</body>
+</html>
