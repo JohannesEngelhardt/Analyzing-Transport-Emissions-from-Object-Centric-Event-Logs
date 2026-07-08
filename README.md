@@ -1,1 +1,1 @@
-(demo.gif)
+![GTFS2OCEL Demo](demo.gif)
