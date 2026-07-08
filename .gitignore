@@ -1,0 +1,41 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+
+koda_pipeline_downloads/
+
+*.log
+
+# Runtime/cache folders
+.matplotlib/
+.matplotlib-cache/
+.pytest_cache/
+
+# Downloaded or generated GTFS / GTFS-RT data
+GTFS-*/
+IDFM-gtfs_french/
+gtfs_data/
+tripupdates_output*/
+trip_updates_csv/
+vehicleposition*/
+vehiclepositions_output*/
+vehicleposition_series_csv/
+service_alerts_output/
+
+# Generated event logs and analysis outputs
+*.csv
+*.json
+*.zip
+*.pb
+*.html
+
+# Local scratch/archive folders
+Astana_Daten/
+Nicht mehr benötigt/
+distance_speed_duration_emission_comparison/
+hourly_occupancy_distribution_2026_05_04/
+
+# Keep source frontend HTML tracked despite global generated HTML ignore.
+!src/frontend/*.html
