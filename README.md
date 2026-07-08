@@ -139,46 +139,7 @@ The Docker container writes to this folder through the volume mount in `docker-c
 ./koda_pipeline_downloads:/app/koda_pipeline_downloads
 ```
 
-This means the data remains on your computer even after the Docker container is stopped or removed.
-
-### Stop The Pipeline
-
-In the terminal where Docker is running, press:
-
-```bash
-Ctrl + C
-```
-
-Or stop the container with:
-
-```bash
-docker compose down
-```
-
-### Restart Later
-
-Start the existing container setup again:
-
-```bash
-docker compose up
-```
-
-If the code changed and the image should be rebuilt:
-
-```bash
-docker compose up --build
-```
-
-### Alternative: Run With Plain Docker
-
-If you do not want to use Docker Compose, you can build and run the image manually:
-
-```bash
-docker build -t koda-pipeline .
-docker run --rm -p 8765:8765 \
-  -v "$PWD/koda_pipeline_downloads:/app/koda_pipeline_downloads" \
-  koda-pipeline
-```
+This means the data remains on your computer even after the Docker container is closed.
 
 ## External Tool
 
@@ -196,7 +157,9 @@ On Windows, install 7-Zip and make sure `7z` is available on `PATH`.
 
 - Data Retrieval downloads GTFS Static, TripUpdates, and VehiclePositions into one pipeline folder.
 - Preprocessing creates `all_trip_updates.csv` and `all_vehicle_positions.csv`.
-- VehiclePositions can be processed as `Complete` or `Fastlane`.
+- VehiclePositions can be processed in three modes:
+  - `Fastlane`: uses selected seconds of each minute, for example every 10 seconds. This creates smaller VehiclePositions CSV files and is faster.
+  - `Complete`: uses all available VehiclePositions updates for every second. This is more complete, but can cause performance problems for large operators.
+  - `Ultra Fastlane`: uses a compact trip-level occupancy table when the occupancy value does not change within a trip. Instead of joining the large VehiclePositions table, the event builder joins a much smaller table with one occupancy value per trip.
 - `Event Builder` uses `KODA.py`.
 - `Event Builder+` uses `KODA_Robust.py`.
-
