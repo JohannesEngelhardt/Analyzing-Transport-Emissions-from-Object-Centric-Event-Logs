@@ -5,6 +5,7 @@ import pandas as pd
 
 
 def active_service_ids_for_date(df_calendar, df_calendar_dates, service_date):
+    # Rebuild the same service-day logic used by the event builders.
     service_date = pd.to_datetime(service_date, errors="coerce")
     if pd.isna(service_date):
         raise ValueError("service_date must be parseable, for example 2026-05-04")
@@ -58,6 +59,7 @@ def active_service_ids_for_date(df_calendar, df_calendar_dates, service_date):
 
 
 def read_trip_ids(path, column="trip_id"):
+    # Read ids as strings because GTFS ids are identifiers, not numbers.
     if not path.exists():
         raise FileNotFoundError(path)
     return set(
@@ -74,6 +76,7 @@ def default_overview_file(project_dir, variant):
 
 
 def evaluate(pipeline_dir, service_date, overview_file):
+    # Compare the input trip basis with the trip objects found in the event log.
     gtfs_dir = pipeline_dir / "extracted" / "gtfs_static"
     trip_updates_file = pipeline_dir / "csv" / "trip_updates" / "all_trip_updates.csv"
 
@@ -114,6 +117,8 @@ def evaluate(pipeline_dir, service_date, overview_file):
     final_trip_objects = int(trip_mapping["trip_id"].nunique())
     split_original_trips = int(parts_by_original_trip.gt(1).sum())
     additional_split_parts = int((parts_by_original_trip - 1).clip(lower=0).sum())
+
+    # The expected check is: final trip objects minus added split parts equals input trips.
     final_minus_additional_split_parts = final_trip_objects - additional_split_parts
 
     original_trip_ids_with_events = set(parts_by_original_trip.index.astype(str))

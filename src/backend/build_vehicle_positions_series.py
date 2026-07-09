@@ -17,6 +17,7 @@ TRIP_OCCUPANCY_ULTRA_FASTLANE_FILE = "trip_occupancy_ultra_fastlane.csv"
 
 
 def pb_files_for_seconds(input_dir: Path, seconds: list[int]) -> list[Path]:
+    # Fastlane reads only snapshots from selected seconds of each minute.
     pb_files_by_path = {}
     for second in seconds:
         second_label = f"{second:02d}"
@@ -26,6 +27,7 @@ def pb_files_for_seconds(input_dir: Path, seconds: list[int]) -> list[Path]:
 
 
 def vehicle_position_rows_from_pb(pb_path: Path) -> list[dict]:
+    # Convert one GTFS-RT VehiclePositions protobuf file into flat CSV rows.
     feed = gtfs_realtime_pb2.FeedMessage()
 
     with open(pb_path, "rb") as f:
@@ -112,6 +114,7 @@ def build_trip_occupancy_ultra_fastlane(
     output_dir: Path,
     chunksize: int = 500_000,
 ) -> Path | None:
+    # Build a small trip-level table for trips where occupancy never changes.
     if not vehicle_positions_csv.exists():
         return None
 
@@ -200,6 +203,7 @@ def build_trip_occupancy_ultra_fastlane(
 
 
 def update_trip_occupancy_stats(trip_stats: dict[str, dict], df: pd.DataFrame):
+    # Track min/max occupancy per trip while streaming VehiclePositions.
     if df.empty or "trip_id" not in df.columns or "occupancy_status" not in df.columns:
         return 0
 
@@ -247,6 +251,7 @@ def write_trip_occupancy_ultra_fastlane(
     total_rows: int,
     usable_rows: int,
 ) -> Path:
+    # Write only trips with constant occupancy; variable trips stay out of Ultra Fastlane.
     output_file = output_dir / TRIP_OCCUPANCY_ULTRA_FASTLANE_FILE
     constant_rows = [
         {
@@ -294,10 +299,12 @@ def build_vehicle_position_csvs(
     seconds: list[int] | None = None,
 ) -> Path | None:
     if mode == "fastlane":
+        # Fastlane keeps fewer PB files to reduce runtime and memory use.
         selected_seconds = seconds or DEFAULT_FASTLANE_SECONDS
         pb_files = pb_files_for_seconds(input_dir, selected_seconds)
         source_label = ", ".join(f"{second:02d}Z" for second in selected_seconds)
     else:
+        # Complete keeps every available VehiclePositions snapshot.
         pb_files = sorted(input_dir.rglob("*.pb"))
         source_label = "all available seconds"
 
@@ -319,6 +326,7 @@ def build_vehicle_position_csvs(
         df = pd.DataFrame(rows)
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s", errors="coerce")
 
+        # Dedupe per PB file only; this keeps memory bounded for large feeds.
         df = df.drop_duplicates(
             subset=["timestamp", "trip_id", "vehicle_id", "latitude", "longitude"],
             keep="first",
@@ -326,6 +334,7 @@ def build_vehicle_position_csvs(
         if df.empty:
             continue
 
+        # Collect Ultra Fastlane stats during the main pass to avoid reading the CSV again.
         usable_occupancy_rows += update_trip_occupancy_stats(trip_occupancy_stats, df)
         df.to_csv(output_csv, index=False, mode="a", header=written_rows == 0)
         written_rows += len(df)

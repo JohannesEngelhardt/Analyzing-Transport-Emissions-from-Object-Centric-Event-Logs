@@ -144,6 +144,7 @@ def haversine_distance_m(lat1, lon1, lat2, lon2):
 
 
 def resolve_service_date():
+    # Prefer the date from the pipeline; otherwise infer it from the folder name.
     env_date = os.environ.get("KODA_SERVICE_DATE")
     if env_date:
         service_date = pd.to_datetime(env_date, errors="coerce")
@@ -160,6 +161,7 @@ def resolve_service_date():
 
 
 def active_service_ids_for_date(df_calendar, df_calendar_dates, service_date):
+    # Find services active on the selected day using calendar plus exceptions.
     if service_date is None:
         return set()
 
@@ -185,6 +187,7 @@ def active_service_ids_for_date(df_calendar, df_calendar_dates, service_date):
         )
 
     if not df_calendar_dates.empty:
+        # calendar_dates can add special services or remove normal services.
         calendar_dates = df_calendar_dates.copy()
         calendar_dates["date"] = pd.to_datetime(
             calendar_dates["date"].astype(str),
@@ -212,6 +215,7 @@ def nearest_vehicle_snapshots_by_time(
     stop_key_columns,
     vehicle_snapshot_columns,
 ):
+    # For each departure, choose the nearest VehiclePositions snapshot from the same trip.
     departures = departure_events.dropna(subset=["trip_id", "departure_time"]).copy()
     snapshots = vehicle_positions.dropna(subset=["trip_id", "timestamp"]).copy()
     if departures.empty or snapshots.empty:
@@ -230,6 +234,7 @@ def nearest_vehicle_snapshots_by_time(
 
         snapshot_times = snapshot_group["timestamp"].to_numpy(dtype="datetime64[ns]")
         departure_times = departure_group["departure_time"].to_numpy(dtype="datetime64[ns]")
+        # searchsorted finds the two neighboring snapshots without comparing all rows.
         insertion_points = np.searchsorted(snapshot_times, departure_times)
 
         nearest_positions = []
@@ -499,6 +504,7 @@ def add_cumulative_road_distance(aux_table):
 
 
 def split_trip_ids_on_day_sequence_reset(aux_table):
+    # If stop_sequence starts again for the same trip object, create a split trip id.
     aux_table = aux_table.copy()
     aux_table["_row_index"] = aux_table.index
     aux_table["_timestamp_sort"] = pd.to_datetime(
@@ -702,6 +708,7 @@ active_service_ids = active_service_ids_for_date(
     service_date,
 )
 
+# Treat GTFS ids as strings so numeric-looking ids are compared exactly.
 df_trips["trip_id"] = df_trips["trip_id"].astype("string")
 df_trips["service_id"] = df_trips["service_id"].astype("string")
 df_stop_times_plan["trip_id"] = df_stop_times_plan["trip_id"].astype("string")
@@ -715,6 +722,8 @@ day_trip_ids = set(
     ].dropna().astype(str)
 )
 rt_trip_ids = set(df_stop_times_rt["trip_id"].dropna().astype(str))
+
+# Calendar is the leading source: only trips active on this service day are used.
 allowed_trip_ids = day_trip_ids
 day_trips_with_rt = day_trip_ids & rt_trip_ids
 rt_trips_not_in_calendar_day = rt_trip_ids - day_trip_ids
@@ -1042,6 +1051,7 @@ departure_base = (
     .drop_duplicates(subset=stop_key_columns, keep="first")
 )
 if OCCUPANCY_MODE == "trip_constant":
+    # Ultra Fastlane: join one constant occupancy value per trip.
     departure_vehicle_snapshot = departure_base[stop_key_columns].merge(
         df_trip_occupancy[["trip_id", "occupancy_status"]],
         on="trip_id",
@@ -1051,6 +1061,7 @@ if OCCUPANCY_MODE == "trip_constant":
         if column not in departure_vehicle_snapshot.columns:
             departure_vehicle_snapshot[column] = pd.NA
 else:
+    # Fastlane/Complete: find the closest VehiclePositions snapshot by time.
     departure_vehicle_snapshot = nearest_vehicle_snapshots_by_time(
         departure_base,
         df_vehicle_positions,
@@ -1071,6 +1082,7 @@ combined_stop_base = pd.concat(
     ],
     ignore_index=True,
 )
+# Merge the departure snapshot once, then reuse it for arrival and departure events.
 combined_stop_events = combined_stop_base.merge(
     departure_vehicle_snapshot,
     on=stop_key_columns,
@@ -1147,6 +1159,7 @@ trip_objects_before_split = int(aux_event_log["trip_id"].dropna().nunique())
 aux_event_log = split_trip_ids_on_day_sequence_reset(aux_event_log)
 trip_objects_after_split = int(aux_event_log["trip_id"].dropna().nunique())
 additional_split_parts = trip_objects_after_split - trip_objects_before_split
+# This line checks that final trip objects minus added split parts equals the pre-split count.
 print(
     "Trip split evaluation:",
     f"trip_objects_before_split={trip_objects_before_split}",

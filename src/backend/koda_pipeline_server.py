@@ -46,6 +46,7 @@ REALTIME_FEEDS = {
 
 
 def resolve_html_file() -> Path:
+    # Allow Docker, local runs, and direct script runs to find the same frontend file.
     candidates = [
         Path(os.environ["KODA_FRONTEND_HTML"]).expanduser()
         for _ in [None]
@@ -94,6 +95,7 @@ def content_disposition_filename(header_value: str | None) -> str | None:
 
 
 def download_file(url: str, target_dir: Path, fallback_name: str) -> tuple[Path, int, int]:
+    # Download one API response to disk and keep the server memory small.
     target_dir.mkdir(parents=True, exist_ok=True)
     request = Request(url, headers={"User-Agent": "KODA local pipeline"})
 
@@ -148,6 +150,7 @@ def extract_7z_archive(archive_file: Path, extract_dir: Path):
 
 
 def reset_directory(directory: Path):
+    # Replace old extracted files so a new run cannot mix with stale data.
     if directory.exists():
         stale_directory = directory.with_name(
             f"{directory.name}.stale-{uuid.uuid4().hex}"
@@ -177,6 +180,7 @@ def prepare_realtime_input_from_raw(raw_dir: Path, extract_dir: Path, operator: 
         path for path in all_archive_files if archive_matches_operator(path, operator)
     ]
 
+    # If there is only one archive, accept it even when the folder name/operator differs.
     if all_archive_files and not archive_files:
         if len(all_archive_files) == 1:
             archive_files = all_archive_files
@@ -222,6 +226,7 @@ def prepare_static_input_from_raw(raw_dir: Path, extract_dir: Path, operator: st
         path for path in all_archive_files if archive_matches_operator(path, operator)
     ]
 
+    # If there is only one archive, accept it even when the folder name/operator differs.
     if all_archive_files and not archive_files:
         if len(all_archive_files) == 1:
             archive_files = all_archive_files
@@ -251,6 +256,7 @@ def prepare_static_input_from_raw(raw_dir: Path, extract_dir: Path, operator: st
 
 
 def build_trip_update_csv(input_dir: Path, output_dir: Path) -> Path | None:
+    # Stream PB files into one CSV instead of keeping all updates in memory.
     output_dir.mkdir(parents=True, exist_ok=True)
     output_file = output_dir / "all_trip_updates.csv"
     if output_file.exists():
@@ -314,6 +320,7 @@ def build_trip_update_csv(input_dir: Path, output_dir: Path) -> Path | None:
         df["arrival_time"] = pd.to_datetime(df["arrival_time"], unit="s", errors="coerce")
         df["departure_time"] = pd.to_datetime(df["departure_time"], unit="s", errors="coerce")
         df["feed_timestamp"] = pd.to_datetime(df["feed_timestamp"], unit="s", errors="coerce")
+        # Keep the first update per trip/stop/sequence to avoid duplicate stop events.
         row_keys = pd.util.hash_pandas_object(
             df[["trip_id", "stop_id", "stop_sequence"]],
             index=False,
@@ -347,6 +354,7 @@ def build_trip_update_csv(input_dir: Path, output_dir: Path) -> Path | None:
 
 
 def collapse_download_root_segments(path: Path) -> Path:
+    # Normalize accidental nested paths like koda_pipeline_downloads/koda_pipeline_downloads/run.
     parts = path.parts
     download_root_indexes = [
         index for index, part in enumerate(parts) if part == DOWNLOAD_ROOT.name
@@ -361,6 +369,7 @@ def collapse_download_root_segments(path: Path) -> Path:
 
 
 def resolve_pipeline_folder(value: str) -> Path:
+    # Accept absolute paths, folder names, and dragged paths from the browser.
     run_dir = collapse_download_root_segments(Path(value).expanduser())
 
     candidates = []
@@ -433,6 +442,7 @@ def check_cancelled(job_id: str | None):
 
 
 def event_activity_type(event_type: str | None) -> str:
+    # Group stop-name-specific event types into stable activity categories.
     event_type = str(event_type or "unknown")
     if event_type.startswith("arrive_stop"):
         return "arrive_stop"
@@ -442,6 +452,7 @@ def event_activity_type(event_type: str | None) -> str:
 
 
 def summarize_ocel_event_log(ocel_file: Path) -> dict:
+    # Build a compact summary for the frontend after the JSON event log is written.
     with ocel_file.open(encoding="utf-8") as f:
         ocel = json.load(f)
 
@@ -830,6 +841,7 @@ def preprocess_koda_data(config: dict, job_id: str | None = None) -> dict:
                 "Building VehiclePositions Complete CSV from all available PB files...",
                 progress=60,
             )
+    # Fastlane and Complete are built here; Ultra Fastlane is derived from their occupancy stats.
     vehicle_csv = build_vehicle_position_csvs(
         input_dir=vehicle_input_dir,
         output_dir=vehicle_csv_dir,
@@ -903,6 +915,7 @@ def preprocess_koda_data(config: dict, job_id: str | None = None) -> dict:
 
 
 def build_event_log(config: dict, job_id: str | None = None) -> dict:
+    # The frontend uses this function to run either KODA.py or KODA_Robust.py.
     variant = str(config.get("event_builder_variant", "standard"))
     if variant == "plus":
         script = BACKEND_DIR / "KODA_Robust.py"
@@ -923,6 +936,7 @@ def build_event_log(config: dict, job_id: str | None = None) -> dict:
             "VehiclePosition source must be complete, fastlane, ultra_fastlane, or legacy."
         )
     if vehicle_position_source == "ultra_fastlane":
+        # Ultra Fastlane avoids the large VehiclePositions CSV and joins a small trip table.
         vehicle_position_mode = str(config.get("vehicle_position_mode", "complete"))
         if vehicle_position_mode not in ("complete", "fastlane"):
             vehicle_position_mode = "complete"
@@ -960,6 +974,7 @@ def build_event_log(config: dict, job_id: str | None = None) -> dict:
             )
 
     env = os.environ.copy()
+    # Pass paths through environment variables so the builder scripts stay portable.
     env["KODA_PIPELINE_DIR"] = str(run_dir)
     env["KODA_SERVICE_DATE"] = date
     env["KODA_VEHICLE_POSITIONS_INPUT_DIR"] = str(vehicle_position_dir)
@@ -980,6 +995,7 @@ def build_event_log(config: dict, job_id: str | None = None) -> dict:
         )
 
     process = subprocess.Popen(
+        # Run the selected builder as a subprocess so it can be aborted from the UI.
         [sys.executable, str(script)],
         cwd=PROJECT_DIR,
         env=env,

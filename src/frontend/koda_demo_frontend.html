@@ -980,6 +980,7 @@
     }
 
     function updateRunningIndicator(key, logWriter, baseText) {
+      // Keep the status text moving while the backend job is still running.
       const existing = activeIndicators.get(key);
       if (existing) {
         existing.baseText = baseText;
@@ -1040,6 +1041,7 @@
     }
 
     function setPipelineFolder(value) {
+      // Preprocessing and Event Builder should use the same pipeline folder.
       preprocessInputDir.value = value;
       eventPipelineDir.value = value;
       syncPipelineFolderSelects(value);
@@ -1087,6 +1089,7 @@
     }
 
     function normalizePipelineFolderFromList(folders, value = pipelineFolder()) {
+      // Convert a folder name from the UI into the absolute path known by the backend.
       const current = value;
       if (!current || isAbsolutePath(current)) return;
 
@@ -1100,6 +1103,7 @@
     }
 
     async function normalizeDroppedPipelineFolder(value) {
+      // Drag-and-drop may provide a full path or only a folder name.
       try {
         const response = await fetch(`${serverUrl()}/api/pipeline-folders`);
         const data = await response.json();
@@ -1148,6 +1152,7 @@
     }
 
     async function refreshPipelineFolders(logWriter = null) {
+      // Ask the local backend which pipeline folders already exist.
       const response = await fetch(`${serverUrl()}/api/pipeline-folders`);
       const data = await response.json();
       if (!response.ok || !data.ok) {
@@ -1307,6 +1312,7 @@
     }
 
     function renderPreprocessResult(result) {
+      // Show both CSV outputs and the Ultra Fastlane occupancy summary.
       const vehicleCsvCount = result.csv.vehicle_positions.length;
       const tripCsvCount = result.csv.trip_updates ? 1 : 0;
       const occupancyInfo = result.csv.trip_occupancy_ultra_fastlane_info;
@@ -1363,6 +1369,7 @@
     }
 
     function renderEventLogResult(result) {
+      // Show the OCEL output file plus a compact event/object summary.
       const summary = result.summary;
       renderEventStats(summary);
       return [
@@ -1395,6 +1402,7 @@
     }
 
     async function pollJob(jobId, onUpdate, onDone, runningIndicator = null) {
+      // Poll the backend until the long-running download/preprocess/build job is done.
       if (runningIndicator) {
         startRunningIndicator(
           runningIndicator.key,
