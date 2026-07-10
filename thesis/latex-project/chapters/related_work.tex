@@ -1,0 +1,47 @@
+\chapter{Related Work}
+\label{chap:related_work}
+
+
+
+\section{Road Transport Emission Models}
+There exists several ways to compute the emission of transports. Many detailed road transport emission models originate from the field of vehicle and powertrain engineering. The original purpose was not carbon accounting, but the prediction and assessment of vehicle exhaust emissions. 
+Emission Inventory Models such as EMEP/EEA \cite{emep_eea_guidebook_2023}, COPERT \cite{copert}, and HBEFA \cite{hbefa42} were developed to support national and regional emission inventories. Their primary purpose is the estimation of air pollutants and greenhouse gas emissions from road transport using standardized emission factors and traffic-related parameters. The main difference between the three emission models is the level of detail, purpose, and inputs.
+In \cite{copertli} is used to compute the bus emissions.  \cite{copertjaworski} analyzes how different bus fleet compositions influence greenhouse gas emissions in public transportation systems using Copert. Jurkovič et al. \cite{jurkovic2020lng} demonstrate the applicability of HBEFA for public transport emission analysis by comparing conventional diesel buses with LNG-powered alternatives. The road transport appendix\cite{emep_eea_road_transport_appendix_2025}  of EMPE/EEA provides emission factors for different vehicle categories, fuels, emission standards, and pollutants. The EMEP/EEA methodology represents an inventory-based reference approach for road transport emission estimation. 
+
+
+
+\section{GTFS and Sustainability}
+The General Transit Feed Specification (GTFS) was developed to provide standardized public transportation data for journey planning and passenger information systems. While GTFS contains detailed operational information about public transport services, it does not directly provide emission data. Therefore, emission estimation requires either additional information about vehicle consumption and emission factors or the application of established emission factor models.
+GTFS2emis \cite{GTFS2Emis} computes emissions by using emission factors from established emission models such as the European Environment Agency (EEA) model. The approach combines GTFS data with fleet characteristic information to generate vehicle trajectories from the GTFS data, which then serve as the basis for emission calculations. Using this model, it is possible to estimate emissions for 16 different pollutants. The computation results include total system emissions and per-passenger emissions.
+
+
+
+Fan et al. (2022) \cite{fan2022transitsim} present TransitSim, a simulation framework for public transit that combines GTFS data with automated passenger counting (APC) data to generate highly resolved, second-by-second trip trajectories. By pairing these trajectories with energy consumption and emission rates from established emission factor models, TransitSim can compute system-wide energy use and greenhouse gas emissions. The integration of APC data further enables the calculation of passenger-level metrics, such as energy consumption or emissions per passenger-mile.
+
+
+
+
+%ASTANA BEISPIEL NOCH ANGEBEN!!!
+
+
+\section{Process Mining for Sustainability}
+Similar to GTFS, process mining requires access to emission factors and events or objects that contain attributes useful for sustainability purposes. Given that this data is available, PM can discover emission drivers within the process, such as different activities or trace variants. With further developments in process mining, such as OCPM, insights about emission-intensive objects can be identified, enabling further analysis like Lifecycle-Assessment (LCA).
+
+
+
+
+Activity-Based Costing (ABC) is an accounting technique that assigns costs to products or services based on the activities they require. While originally developed for monetary cost allocation, the underlying principles have also been applied to sustainability analyses and emission accounting. In the context of process mining, several approaches use event logs as the basis for emission computation. Time-Driven Activity-Based Costing (TDABC) considers activity duration as the primary cost driver and derives costs from the time spent on process activities [19]. Existing approaches apply TDABC using event logs that contain temporal information, such as activity start and end timestamps \cite{tdabc_pm}. Other approaches rely on cost annotations stored directly in event logs, for example, through the XES cost extension \cite{costawarepm}.
+
+
+
+These approaches primarily operate from a case-centric process mining perspective and focus on associating costs or emissions with process executions. In contrast, OCEAn \cite{ocean} extends emission analysis to OCPM. The framework computes event-level emissions using activity-based costing principles and subsequently distributes the resulting carbon footprint among the objects involved in the process. This enables sustainability analyses from multiple object perspectives and supports the computation of object-specific carbon footprints.
+
+Celonis, a major PM vendor, recently introduced its Sustainability Solution Suite\cite{celonis_sustainability_solution_suite_2025}, developed in cooperation with Climatiq. The suite supports organizations in measuring, reporting, and reducing emissions across different business processes using process mining and emission factors. Another application, the Shipping Emissions Reduction App\cite{celonis_shipping_emissions_2024}, also developed together with Climatiq, focuses on freight transportation. It is built as an add-on for the Order-to-Cash (O2C) process and uses shipment data from SAP to calculate emissions for different types of deliveries. Therefore, the application is designed for logistics processes rather than public transportation.
+
+
+
+
+
+
+%\section{Object-Centric Process Mining}
+

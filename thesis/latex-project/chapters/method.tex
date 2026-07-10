@@ -1,0 +1,602 @@
+
+
+\chapter{Method}
+\label{chap:method}
+\begin{figure}[H]
+	\center
+	\includegraphics[width=0.9\textwidth]{thesis-main/figures/Method_figures/overview_process_workflow.png}
+	\caption{Schematic overview of the public transportation workflow. The process starts with \textit{begin\_shift}. During service, the vehicle alternates between \textit{Arrive\_stop }and \textit{Departure\_stop}. After \textit{Departure\_stop}, the vehicle may either perform \textit{Change\_direction} to continue in the opposite direction or end the shift with \textit{Parking}. The circles depict the participating objects.}
+	\label{fig:method_detaild}
+\end{figure}
+The overall goal of this work is to derive an object centric event log from GTFS data that enables process-oriented sustainability analysis. In particular, the event log should contain all information required to reconstruct the transportation process, calculate emissions, and identify emission-intensive process executions, and objects.
+To achieve that goal, we first describe the data source, the context and the process itself. Secondly, we derive object types and event types from the process and describe the relevant heuristics to do that. Third, relationships between events and objects are established according to the OCEL 2.0 standard. Fourth, the event log is enriched with sustainability-related attributes that enable the later emission analysis. Finally, we analyze the characteristics of the resulting event log. This analysis is not yet focused on emission estimation. Instead, it provides an overview of the operational properties of the event log and examines the information available for later sustainability analyses. These characteristics provide the necessary background for interpreting the emission analyses presented in the following chapters.
+
+\section{Process Description}
+In this section, we introduce the data source, the application context, and the operational process considered in this work. This provides the foundation for the subsequent construction of the object-centric event log.
+%In this chapter, we describe the creation and characteristics of the event log used in this work. The first step was to identify a suitable public data source that provides both GTFS Schedule and GTFS real-time data. While GTFS Schedule contains the planned transportation services, GTFS real-time provides operational information about the actual execution of these services, including occupancy, delays, and vehicle positions. The selected data source was particularly suitable because it already contains archived real-time data. Otherwise, these data would have needed to be collected continuously over a longer period. In addition, the dataset provides the attributes required for our analysis, especially occupancy and delay information. Therefore, the chosen data source enabled an efficient creation of the event log and fulfilled the requirements of one of the research goals.
+
+
+%HIER NOCH WAS IST KODA ??
+
+
+\subsection{Introduction of the Dataset and Process}
+The data source used to generate the event log originates from the public transportation domain. For this work, we use the publicly available dataset provided by Östgötatrafiken, the regional public transport authority of Östergötland, Sweden . Östgötatrafiken is responsible for coordinating and operating public transportation services within the region, including buses, trams, and regional trains. The operational area covered by Östgötatrafiken is shown in \autoref{fig:operation_area}. Public transportation services are operated by nine contracted bus operators. For the case study presented in this work, we consider the operational data of a single weekday, 04-05-2026. The date was selected randomly from the available weekdays, as weekday operations provide a more representative transportation workload than weekends. %The bus transportation process describes operational processes, such as arrival and departure at the transit stop, vehicle turnaround, or shift-related events. 
+
+\begin{figure}[ht]
+    \centering
+    
+    \includegraphics[width=0.7\linewidth]{thesis-main/figures/Method_figures/operational_area.png}
+    \caption{Operational area of Östgötatrafiken. The network is centered around the cities of Linköping and Norrköping, with several routes extending towards the southeastern coastal region.}
+    \label{fig:operation_area}
+\end{figure}
+
+The data are obtained through Trafiklab 
+%\cite{trafiklab}
+\footnote{\url{https://www.trafiklab.se}}, a Swedish open-data platform that provides researchers and developers with access to public transportation data and APIs from multiple transport operators. Trafiklab has previously been used as a data source for transport accessibility and transit scheduling research \cite{GTFS_accessibility, Borelius1979136}. Within Trafiklab, the KODA service 
+%\cite{koda_api}
+\footnote{\url{https://www.trafiklab.se/api/our-apis/koda/}} provides both GTFS Schedule and GTFS-Realtime data for several Swedish transport operators \cite{trafiklab_gtfs_regional}.
+The selection of Östgötatrafiken is primarily based on data availability. Besides static GTFS data, the dataset also provides GTFS-Realtime information, including vehicle positions and passenger occupancy. These data are essential for this work because they enable the reconstruction of vehicle movements and provide additional sustainability-relevant information. In particular, occupancy data and vehicle positions allow the estimation and analysis of transport emissions in later chapters.
+
+After introducing the data source, we now describe the operational public transportation process represented by these data.
+
+
+
+%We analyze and build the Event Log from public transportation data, e.g., bus transportation, from the KoDa API. For this thesis, we consider data from the swedish public transportation in the region of Östergötland. For the case study we consider one single day, the 04-05-2026. We have chosen that date randomly but to be an weekday, as there is more traffic than on the weekend. We take this data set for the case study as this contains real-time data, which is important to have the vehicle that conducted the trip. Furthermore, this data sets contains also occupancy of passengers and the speed which helps us for further sustainability analysis. The bus transportation data set  suits well for analyzing emissions and also root cause analyze why the we have that emission. It enables also for several other use cases such as analyzing dwell times, occupancy, average speed. the bus transportation data describes the arrival and departure of stops, the change of direction, the layover time and if a shift ends or begins. Furthermore, we expect to use object such as agency, route, trip, bus stops and vehicle. 
+\subsection{Business Process Description}
+Figure~\ref{fig:method_detaild} illustrates the operational workflow considered in this work. \autoref{fig:example_sequences_trip} presents example event sequences derived from this workflow. A vehicle enters operation with the activity \textit{Begin\_shift}. The exact location of the vehicle at this point cannot be determined from the available data. After entering operation, the vehicle performs a deadhead trip without passengers to the first stop of its scheduled service, where passenger operation begins with the first \textit{Arrive\_stop} activity. The vehicle then starts passenger service by repeatedly executing an alternating sequence of \textit{Departure\_stop} and \textit{Arrive\_stop} activities while traveling between consecutive stops. At each stop, passengers can enter and leave the vehicle before it departs to the next stop. This sequence continues until the vehicle reaches the final stop of the trip. Depending on the operational schedule, the vehicle either performs a \textit{Change\_direction} to operate the return trip or leaves passenger service through the activity \textit{Parking}. As a result, a single vehicle usually performs multiple trips during one operational shift. The activity \textit{Parking} marks the end of the observed passenger service. Afterward, the vehicle may remain at the terminal or perform an empty trip without passengers, for example to return to the depot, undergo maintenance, refuel or recharge, or prepare for the next scheduled service. The operational workflow described above forms the basis for the identification of event types and object relationships used to construct the object-centric event log in the following sections.
+
+ 
+
+%Für die Erstellung des OCELS betrachten wir öffentlich zugängliche Daten des kollktivtrafikens Datalab. Dieses hat das Ziel der Sammlung, Speicherung und Bereitstellung von historischen Open Data von den swedischen public transportation. Die Daten werden mit dem GTFS für die static data bereitgestellt und die real-time data mit protobuf dateien.
+%Für unseren Fall wurden die Daten über die API von kollktivtrafikens Datalab für die static und real-time daten gezogen. 
+
+%Der Entstehungskontext ist durch die operativen Informationssysteme der öffentlichen Verkehrsbetreiber geprägt, die die Fahrpläne, Fahrten und Echtzeit‑Standort‑Daten bereitstellen. Die Daten werden also primär für Planung, Betrieb und Information der Fahrgäste erhoben, nicht für späteres Process‑Mining.
+
+%Als Einschränkung ist noch zu betrachten, dass wir den Fahrplan und Fahrten nur für einen Agency betrachten.
+
+%GTFS wurde entworfen, um Fahrpläne und geografische Informationen des öffentlichen Verkehrs (z.B. Haltestellen, Routen, Fahrten) standardisiert auszutauschen.
+
+%Wir erheben die Daten deswegen, weil es bisher wenig GTFS-Datensätze nutzbar für Object Centric Process Mining und im speziellen. GTFS Daten sind deswegen interessant weil sie für mehrere für die sustainability Analyse im Process Mining interessant sind. Da die Emission von öffentlichen Verkeher reduziert werden osll und GTFS Daten sowohl Information über die Fahrten, wie Distanzen und GPS Daten sowie die Average speed und die occupancy der passenger besitzen. Mit dieser Datenlagen kann man ausserdem weitere Forschungsfragen beantworten, z.B. man für die Berechnung von Emission auch den Zeitfaktor verwenden kann anstelle Von Distanzen. 
+
+%Weitere Einschränkungen sind, dass es keine genauen Fahrgastzahlen gibt. Events wie anfahren oder bremsen sind sehr aufwendig abzuschöpfen durch die große Datenmenge
+\section{Derivation of Object-Centric Event Log}
+
+To transform GTFS and GTFS-Realtime data into an object-centric event log, we define a set of construction principles. The input consists of the static GTFS data and the corresponding GTFS-Realtime feeds. Based on these data, the construction principles identify the entities that are represented as object types and object instances, derive the operational events, and establish the event-to-object relationships required for an object-centric event log. The output of this process is a complete object-centric event log containing the identified objects, events, and their relationships.
+
+
+
+\subsection{Derivation of Object Types}
+The first step in constructing the OCEL is to identify the object types. Since GTFS was not developed for object-centric process mining, it does not define which entities should be modeled as objects. Therefore, we use a set of heuristics to identify suitable object types from the GTFS data.
+
+\paragraph{H1: Structural Entity Heuristic}
+GTFS tables containing a stable primary identifier are considered object candidates.  Therefore, tables representing persistent business entities, such as \textit{Agency}, \textit{Route}, \textit{Trip}, and \textit{Stop}, are considered as candidate object types. This heuristic is based on \cite{ExtractingOCEL}.
+
+\paragraph{H2: Stable Attribute Heuristic}
+Attributes contained in the input data are considered additional object candidates if they identify an independent operational entity and remain constant for another object throughout the available observations. Such stable identifiers are promoted to object types.
+
+\paragraph{H3: Information Table Heuristic}
+GTFS tables that primarily contain temporal, spatial, or descriptive information are not considered object types. Instead, their information is used to derive attributes or relationships for the identified objects.
+\\
+
+
+Applying the proposed heuristics results in the object types \textit{Agency}, \textit{Operator}, \textit{Route}, \textit{Trip}, \textit{Vehicle}, and \textit{Stop}. Together, these objects represent the main operational entities of the transportation process, while tables that only provide supporting information are excluded.
+
+Applying the Structural Entity Heuristic (H1) to the GTFS data identifies the object candidates \textit{Agency}, \textit{Route}, \textit{Trip}, and \textit{Stop}, as these entities are represented by dedicated GTFS tables with stable primary identifiers. Applying the Stable Identifier Heuristic (H2) identifies the additional object candidates \textit{Vehicle} and \textit{Operator}. For example, the attribute \texttt{vehicle\_id} remains constant for a given trip and therefore identifies the vehicle performing the service. \autoref{tab:gtfs-realtime-trip-update-excerpt} shows an excerpt of the GTFS-Realtime trip update stream, where each \texttt{trip\_id} is consistently associated with the same \texttt{vehicle\_id}. Similarly, the attribute \texttt{operator} remains constant for a trip and identifies the responsible transport operator. Consequently, both identifiers are promoted to object types. Finally, the Information Table Heuristic (H3) excludes tables such as \texttt{shapes}, \texttt{calendar}, and \texttt{calendar\_dates}, as they mainly provide spatial or temporal information about other entities rather than representing independent operational entities.
+
+The resulting object types are \textit{Agency}, \textit{Operator}, \textit{Route}, \textit{Trip}, \textit{Vehicle}, and \textit{Stop}. An overview of the semantics are provided in \autoref{tab:objects_semantic}. These object types define the reporting perspectives of the resulting OCEL. Emissions can be aggregated and analyzed at different levels, including trips, routes, vehicles, operators, agencies, and stops. This enables the identification of high-emission trips, the comparison of different routes, vehicles, and transport providers. Furthermore, the selected object types allow future enrichment with additional information, such as vehicle-specific fuel consumption or emission factors, to support more detailed sustainability analyses.
+
+\begin{table}[H]
+\centering
+\tiny
+\setlength{\tabcolsep}{2.4pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Excerpt of the GTFS-Realtime \texttt{TripUpdates} stream illustrating the stable association between \texttt{trip\_id} and \texttt{vehicle\_id}. The highlighted entries show that the same \texttt{vehicle\_id} remains associated with a single \texttt{trip\_id} throughout the execution of the trip. This stable relationship indicates that the vehicle consistently participates in the execution of a trip and therefore motivates modeling \texttt{vehicle} as an object type in the generated OCEL.}
+\label{tab:gtfs-realtime-trip-update-excerpt}
+\begin{tabular}{lllllrr}
+\toprule
+\textbf{trip\_id} &
+\textbf{vehicle\_id} &
+\textbf{stop\_id} &
+\textbf{arrival\_time} &
+\textbf{departure\_time} &
+\textbf{stop\_seq.} &
+\textbf{delay} \\
+\midrule
+\cellcolor{green!20}55700000081925237 & \cellcolor{green!20}9031005920703434 & 9022005001094002 & 2026-05-04 04:59:14 & 2026-05-04 04:59:14 & 34 & 0.0 \\
+\cellcolor{green!20}55700000081925237 & \cellcolor{green!20}9031005920703434 & 9022005000003004 & 2026-05-04 05:02:09 & 2026-05-04 05:02:23 & 35 & 19.0 \\
+\cellcolor{green!20}55700000081925237 & \cellcolor{green!20}9031005920703434 & 9022005081011004 & 2026-05-04 05:04:34 & 2026-05-04 05:04:34 & 36 & 73.0 \\
+\cellcolor{green!20}55700000081925237 & \cellcolor{green!20}9031005920703434 & 9022005000002002 & 2026-05-04 05:07:40 & 2026-05-04 05:07:40 & 37 & 197.0 \\
+\cellcolor{green!20}55700000081925237 & \cellcolor{green!20}9031005920703434 & 9022005001000003 & 2026-05-04 05:10:05 & 2026-05-04 05:10:05 & 38 & -55.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005001459001 & 2026-05-04 05:00:44 & 2026-05-04 05:00:44 & 16 & -119.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005000423001 & 2026-05-04 05:02:15 & 2026-05-04 05:02:15 & 17 & -119.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005000425003 & 2026-05-04 05:06:48 & 2026-05-04 05:07:02 & 18 & 31.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005000042001 & 2026-05-04 05:08:27 & 2026-05-04 05:09:08 & 19 & 52.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005000198001 & 2026-05-04 05:10:39 & 2026-05-04 05:10:47 & 20 & 131.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005001249001 & 2026-05-04 05:11:59 & 2026-05-04 05:12:10 & 21 & 190.0 \\
+\cellcolor{yellow!35}55700000082890227 & \cellcolor{yellow!35}9031005920703443 & 9022005004230001 & 2026-05-04 05:14:00 & 2026-05-04 05:14:12 & 22 & 281.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[h]
+\caption{Semantics of object types}
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{3cm} p{10cm}}
+\toprule
+\textbf{Object Types} & \textbf{Semantics} \\
+\midrule
+Agency & Transport agency contracts and organize operator. \\
+Route & Routes describe the lines that are operated, e.g., line 12. \\
+Trip & The trip object describes an instance of a route, i.e., its concrete execution. \\
+Vehicle & The vehicle object represents the vehicle used for a trip. \\
+Stop & The stop object represents a bus stop. \\
+Operator & Operator that gets contracted by the agency. Conducts trips. \\
+\bottomrule
+\end{tabular}
+\label{tab:objects_semantic}
+\end{table}
+
+
+
+
+\subsection{Event Types}
+
+After identifying the object types, the next step is to derive the event types that describe the operational behavior of the transportation process. Since GTFS data do not explicitly represent process events, an auxiliary event log is introduced as an intermediate representation for systematically deriving these event types. It is constructed using two heuristics. The first heuristic derives the event types \textit{arrive\_stop} and \textit{departure\_stop} from the timestamps provided by the GTFS data. The second heuristic derives additional operational event types by analyzing changes between consecutive entries. Together, the two heuristics construct the auxiliary event log and derive the event types required for the subsequent OCEL construction.
+
+\begin{description}
+    \item[H4: Timestamp Heuristic]
+    Timestamps that describe an operational state change are considered event candidates. In the GTFS data, arrival and departure times at stops represent such state changes.
+
+\item[H5: Operational State Heuristic]
+Additional operational event types are derived from consecutive entries of the same vehicle in the enriched auxiliary event log. A predefined temporal threshold together with changes in operational attributes, such as \texttt{direction\_id}, is used to distinguish operational transitions within the same service from transitions between different operational phases.
+\end{description}
+
+The construction of the auxiliary event log begins by applying the Timestamp Heuristic (H4) to the \texttt{stop\_times} table. Since \texttt{arrival\_time} and \texttt{departure\_time} are the only timestamp attributes describing operational state changes, they are used to derive the event types \textit{arrive\_stop} and \textit{departure\_stop}. The \texttt{stop\_times} table is subsequently transformed into the auxiliary event log by replacing the separate timestamp attributes with a single timestamp attribute and adding the corresponding event type. All remaining attributes of the respective \texttt{stop\_times} entry are copied unchanged into the auxiliary event log. The resulting auxiliary event log is formally defined as follows.
+
+\begin{definition}[Auxiliary Event Log]
+Let $U_{\mathrm{ev}}$ be the universe of events, $U_{\mathrm{time}}$ the universe of timestamps, and $U_{\mathrm{val}}$ the universe of attribute values.
+Let $A_{\mathrm{aux}}$ be the set of auxiliary event attributes.
+
+The auxiliary event log is defined as
+\[
+L_{\mathrm{aux}}
+=
+(E_{\mathrm{aux}},
+\mathrm{etype}_{\mathrm{aux}},
+\mathrm{time}_{\mathrm{aux}},
+\alpha_{\mathrm{aux}})
+\]
+where
+\[
+E_{\mathrm{aux}} \subseteq U_{\mathrm{ev}},
+\qquad
+\mathrm{etype}_{\mathrm{aux}}
+:
+E_{\mathrm{aux}}
+\rightarrow
+\{\textit{arrive\_stop},\textit{departure\_stop}\},
+\]
+\[
+\mathrm{time}_{\mathrm{aux}}
+:
+E_{\mathrm{aux}}
+\rightarrow
+U_{\mathrm{time}},
+\qquad
+\alpha_{\mathrm{aux}}
+:
+E_{\mathrm{aux}}
+\times
+A_{\mathrm{aux}}
+\rightarrow
+U_{\mathrm{val}}.
+\]
+
+For each auxiliary event $e \in E_{\mathrm{aux}}$, the function
+$\mathrm{etype}_{\mathrm{aux}}(e)$ assigns exactly one of the two event types
+$\textit{arrive\_stop}$ or $\textit{departure\_stop}$.
+\end{definition}
+
+The auxiliary event log is subsequently enriched by exploiting the foreign-key relationships of the GTFS schema. Starting from the available \texttt{trip\_id}, \texttt{stop\_id}, and \texttt{vehicle\_id}, the corresponding GTFS Schedule and GTFS-Realtime tables are traversed to retrieve the remaining object identifiers as well as the attributes of the referenced objects. As a result, each \textit{arrive\_stop} and \textit{departure\_stop} event contains the identifiers and attributes of the associated \texttt{trip}, \texttt{stop}, \texttt{vehicle}, \texttt{operator}, \texttt{route}, and \texttt{agency} objects. The resulting representation is referred to as the enriched auxiliary event log. An example is shown in \autoref{tab:auxiliary_event_log_shift}.
+
+The event types \textit{arrive\_stop} and \textit{departure\_stop} are then refined by appending the corresponding stop name obtained from the \texttt{stops} table. This distinguishes events occurring at different stops, resulting in event types such as \textit{arrive\_stop\_Marielund} and \textit{departure\_stop\_Marielund}.
+\begin{table}[ht]
+\centering
+\caption{Semantics of the derived event types.}
+\label{tab:event_semantics}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{3.2cm} p{10.5cm}}
+\toprule
+\textbf{Activity Type} & \textbf{Semantics} \\
+\midrule
+\textit{begin\_shift} &
+Marks the beginning of a vehicle's operational shift. \\
+
+\textit{arrive\_stop} &
+Represents the arrival of a vehicle at a passenger stop. \\
+
+\textit{departure\_stop} &
+Represents the departure of a vehicle from a passenger stop. \\
+
+\textit{change\_direction} &
+Represents the transition between two consecutive passenger trips in opposite directions. \\
+
+\textit{parking} &
+Marks the end of a vehicle's operational shift. \\
+\bottomrule
+\end{tabular}
+\end{table}
+After deriving the event types, activity types are introduced as an abstraction over the event types. Since the event types \textit{arrive\_stop} and \textit{departure\_stop} are refined by appending the corresponding stop name, many event types represent the same operational activity while differing only in the stop at which they occur. Therefore, each event is assigned an activity type using the function \textit{acttype} defined in \autoref{def:def_ocel}. The semantics of the derived activity types are summarized in Table~\ref{tab:event_semantics}.
+
+After enriching the auxiliary event log, H5 is applied to derive the remaining operational event types. H5 (Operational State Heuristic) is realized through three derivation rules. For this purpose, the entries of the enriched auxiliary event log are grouped by \texttt{vehicle\_id} and ordered by timestamp.  A temporal threshold of one hour is used to distinguish between transitions within the same operational service and transitions between different operational phases. The threshold is based on the operational assumption that the layover time between two consecutive passenger trips of the same vehicle does not exceed one hour under the Swedish public transport scheduling practices considered in this work \cite{european_commission_driving_time_rest_periods}. Consequently, time gaps longer than one hour are interpreted as boundaries between operational shifts rather than as temporary interruptions within the same operational service.
+
+The first derivation rule derives the event type \textit{begin\_shift}. A \textit{begin\_shift} event is inserted if the first observed event within the timestamp-ordered sequence of events associated with the same vehicle has no predecessor or if the time difference to its predecessor exceeds the defined threshold. This event represents the beginning of a vehicle's operational shift and implicitly models the deadhead movement from the depot to the first passenger stop. All remaining event attributes are inherited from the succeeding event.
+
+The second derivation rule derives the event type \textit{parking}. A \textit{parking} event is inserted if the last observed event within the timestamp-ordered sequence of events associated with the same vehicle has no successor or if the time difference to its successor exceeds the defined threshold. This event represents the end of an operational shift and indicates that the vehicle is assumed to leave passenger service and return to the depot. All remaining event attributes are inherited from the preceding event.
+
+The third derivation rule identifies the event type \textit{change\_direction}. A \textit{change\_direction} event is derived if the value of \texttt{direction\_id} changes between two consecutive events of the same vehicle, while the time difference remains below the defined threshold. This indicates that the vehicle changes its driving direction while remaining in passenger service. Consequently, no deadhead movement between the two trips is assumed, allowing consecutive passenger trips to be linked as part of the same operational shift. All remaining event attributes are inherited from the preceding event.
+
+\autoref{tab:auxiliary_event_log_shift} illustrates an excerpt of the enriched auxiliary event log before applying H5. The temporal gap between two consecutive entries exceeds the defined threshold, while the values of \texttt{route\_short\_name}, \texttt{direction\_id}, and \texttt{trip\_id} also change. Based on these observations, a \textit{parking} event is inserted after the last event before the interruption and a \textit{begin\_shift} event is inserted before the first event after the interruption.
+
+
+\autoref{tab:auxiliary_event_log_direction} illustrates an excerpt of the enriched auxiliary event log before applying H5. The time difference between two consecutive entries remains below the defined threshold, whereas the value of \texttt{direction\_id} changes. Based on these observations, a \textit{change\_direction} event is inserted between the corresponding trips.
+
+
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.03}
+\caption{The table shows the auxiliary event log before deriving additional activities. The highlighted rows indicate a change in both \texttt{trip\_id} and \texttt{direction\_id}, while the temporal gap between the two trips exceeds the defined threshold of one hour. This combination is interpreted as the end of one operational shift and the beginning of the next, from which the event types \textit{parking} and \textit{begin\_shift} are derived.}
+\label{tab:auxiliary_event_log_shift}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lllllll@{}}
+\toprule
+id & trip\_id & event\_type & timestamp & route\_short\_name & vehicle\_id & direction\_id \\
+\midrule
+\dots & \dots & \dots & \dots & \dots & \dots & \dots \\
+ad\_813 & 55700000080643712 & departure\_stop\_Stora Torget & 2026-05-03 22:06:17 & 3 & 9031005920505750 & 0 \\
+ad\_870 & 55700000080643712 & arrive\_stop\_Kungsgatan & 2026-05-03 22:07:35 & 3 & 9031005920505750 & 0 \\
+ad\_871 & 55700000080643712 & departure\_stop\_Kungsgatan & 2026-05-03 22:07:35 & 3 & 9031005920505750 & 0 \\
+ad\_930 & 55700000080643712 & arrive\_stop\_Linköpings resecentrum & 2026-05-03 22:08:43 & 3 & 9031005920505750 & 0 \\
+\rowcolor{red!10}
+ad\_931 & 55700000080643712 & departure\_stop\_Linköpings resecentrum & 2026-05-03 22:08:46 & 3 & 9031005920505750 & 0 \\
+\rowcolor{red!10}
+ad\_3419 & 55700000074069626 & arrive\_stop\_Kråkbärsvägen & 2026-05-04 03:15:02 & 10 & 9031005920505750 & 1 \\
+ad\_3421 & 55700000074069626 & departure\_stop\_Kråkbärsvägen & 2026-05-04 03:15:02 & 10 & 9031005920505750 & 1 \\
+ad\_3547 & 55700000074069626 & arrive\_stop\_Vist skola & 2026-05-04 03:16:07 & 10 & 9031005920505750 & 1 \\
+ad\_3570 & 55700000074069626 & departure\_stop\_Vist skola & 2026-05-04 03:16:21 & 10 & 9031005920505750 & 1 \\
+ad\_3700 & 55700000074069626 & arrive\_stop\_Norrbergavägen & 2026-05-04 03:17:28 & 10 & 9031005920505750 & 1 \\
+ad\_3705 & 55700000074069626 & departure\_stop\_Norrbergavägen & 2026-05-04 03:17:28 & 10 & 9031005920505750 & 1 \\
+\dots & \dots & \dots & \dots & \dots & \dots & \dots \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.03}
+\caption{Excerpt of the auxiliary event log containing only the activity types \textit{arrive\_stop} and \textit{departure\_stop} for a single vehicle. The highlighted rows show a change in both \texttt{trip\_id} and \texttt{direction\_id}, while the \texttt{route\_short\_name} remains unchanged. Since the temporal gap between the two trips is below the defined threshold, this combination is interpreted as a direction change, from which a \textit{change\_direction} event type is derived.}
+\label{tab:auxiliary_event_log_direction}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lllllll@{}}
+\toprule
+id & trip\_id & event\_type & timestamp & route\_short\_name & vehicle\_id & direction\_id \\
+\midrule
+\dots & \dots & \dots & \dots & \dots & \dots & \dots \\
+ad\_11524 & 55700000074069626 & departure\_stop\_Hallonvägen & 2026-05-04 04:04:41 & 10 & 9031005920505750 & 1 \\
+ad\_11771 & 55700000074069626 & arrive\_stop\_Östernäs & 2026-05-04 04:05:42 & 10 & 9031005920505750 & 1 \\
+ad\_11796 & 55700000074069626 & departure\_stop\_Östernäs & 2026-05-04 04:05:48 & 10 & 9031005920505750 & 1 \\
+ad\_11919 & 55700000074069626 & arrive\_stop\_Udden & 2026-05-04 04:06:21 & 10 & 9031005920505750 & 1 \\
+ad\_11922 & 55700000074069626 & departure\_stop\_Udden & 2026-05-04 04:06:21 & 10 & 9031005920505750 & 1 \\
+ad\_12229 & 55700000074069626 & arrive\_stop\_Roxtuna & 2026-05-04 04:07:44 & 10 & 9031005920505750 & 1 \\
+\rowcolor{red!10}
+ad\_12232 & 55700000074069626 & departure\_stop\_Roxtuna & 2026-05-04 04:07:44 & 10 & 9031005920505750 & 1 \\
+\rowcolor{red!10}
+ad\_14376 & 55700000074075671 & arrive\_stop\_Roxtuna & 2026-05-04 04:17:18 & 10 & 9031005920505750 & 0 \\
+ad\_15542 & 55700000074075671 & departure\_stop\_Roxtuna & 2026-05-04 04:21:54 & 10 & 9031005920505750 & 0 \\
+ad\_15968 & 55700000074075671 & arrive\_stop\_Udden & 2026-05-04 04:23:43 & 10 & 9031005920505750 & 0 \\
+ad\_15972 & 55700000074075671 & departure\_stop\_Udden & 2026-05-04 04:23:43 & 10 & 9031005920505750 & 0 \\
+\dots & \dots & \dots & \dots & \dots & \dots & \dots \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Relationships}
+After deriving the event types and identifying the object types, the next step is to establish the relationships between events and objects, as well as between objects themselves. The enriched auxiliary event log serves as the input for this step. Based on the information contained in this representation and the identified object types, the event-to-object and object-to-object relationships are derived. The output of this step is the relational structure of the OCEL, consisting of the event-to-object and object-to-object relations.
+
+\subsubsection{Event-to-Object Relationships}
+Event-to-object relationships are derived based on the enriched auxiliary event log. For activity types derived by the Timestamp Heuristic (H4), namely \textit{arrive\_stop} and \textit{departure\_stop}, the corresponding object instances of the types \textit{vehicle}, \textit{operator}, \textit{trip}, \textit{stop}, \textit{agency}, and \textit{route} are assigned according to the identifiers stored in the enriched auxiliary event log. Consequently, each H4 event is related to all six object types.
+
+For activity types derived by the Operational State Heuristic (H5), namely \textit{begin\_shift}, \textit{parking}, and \textit{change\_direction}, the corresponding object instances are likewise obtained from the enriched auxiliary event log. These events are related to the object types \textit{vehicle}, \textit{operator}, \textit{trip}, \textit{route}, and \textit{agency}. No relationship to a \textit{stop} object is created, since these operational activities do not represent interactions at passenger stops and therefore no stop participates in their execution.
+Since a \textit{change\_direction} event represents the operational
+transition between two consecutive passenger trips, it is related to both
+the \textit{trip} object of the preceding \textit{arrive\_stop} event and
+the \textit{trip} object of the succeeding \textit{departure\_stop} event.
+
+An example of the event-to-object relationships is shown in \autoref{tab:kodak-ocel-example}.
+
+\subsubsection{Object-to-Object Relationships}
+Object-to-object relationships are derived based on two principles. First, relationships are created whenever two identified object types are connected through a foreign key in the GTFS schema. Second, relationships are created for object types that exhibit a constant association throughout the dataset, as described during the object identification step.
+In \autoref{tab:o2o_relationships} we see an overview of the derived object-to-object relation.
+
+
+
+\begin{table}[h]
+\centering
+\caption{Object-to-object relationships}
+\begin{tabular}{lll}
+\toprule
+\textbf{ocel\_source\_objecttype } & \textbf{ocel\_target\_objecttype} & \textbf{ocel\_qualifier} \\
+\midrule
+Agency & Route & Conducted Route\\
+%Agency & Vehicle  & Used vehicle by agency\\
+Route & Trip  & Trip belongs to route \\
+Trip & Vehicle  & Trip is conducted by vehicle \\
+Trip  & Stops  & Stop belongs to trip \\
+Trip  & Trip  & Trip is preceded by trip \\
+Trip  & Operator  & Trip conducted by operator \\
+Vehicle & Stops  & Vehicle stops at stop \\
+\bottomrule
+\end{tabular}
+\label{tab:o2o_relationships}
+\end{table}
+For example, object types like \textit{Agency} and \textit{Route} have a foreign key relation in the GTFS schema. The object types \textit{Trip} and \textit{Vehicle} have constant association throughout the dataset.
+
+
+After deriving the relationships, the remaining step is to enrich the OCEL with event and object attributes. These attributes provide the operational and sustainability-relevant information required for the later analyses.
+\newpage
+\subsection{Derivation of the Event and Object Attributes}
+After deriving the event types and establishing the relationships between events and object instances, the final step is the derivation of event and object attributes. As input, we use the auxiliary event log constructed in the previous steps. Based on this auxiliary event log, the event and object attributes are assigned, resulting in the final object-centric event log.
+
+
+\subsubsection{Events}
+The final event log contains the derived event types together with their corresponding event attributes. These attributes provide the operational information required for the subsequent process mining and sustainability analyses.
+The event types derived by H4 are enriched with the following event attributes:
+
+The event types derived by H4 inherit the following event attributes from the GTFS data:
+
+\begin{itemize}
+    \item \textbf{Timestamp.} The timestamp is inherited from the corresponding entry in the auxiliary event log.
+
+    \item \textbf{Delay.} The delay value is inherited from the corresponding entry in the auxiliary event log.
+
+    \item \textbf{Occupancy.} The occupancy value is inherited from the corresponding entry in the auxiliary event log.
+
+    \item \textbf{Distance.} The cumulative traveled distance is inherited from the corresponding entry in the auxiliary event log. Since no distance is traveled between the arrival and departure at the same stop, both events receive the same distance value.
+
+    \item \textbf{Latitude and Longitude.} The geographic coordinates are inherited from the corresponding entry in the auxiliary event log.
+\end{itemize}
+
+The event types derived by H5 inherit only a timestamp. For a \textit{change\_direction} or \textit{parking} event, the timestamp is inherited from the preceding event. For a \textit{begin\_shift} event, the timestamp is obtained by subtracting the delay of the first observed \textit{arrive\_stop} event from its timestamp. This reflects the assumption that the vehicle must have started its operational shift before reaching the first passenger stop and before the observed delay had already accumulated. No further event attributes are inherited because these event types represent operational transitions or deadhead movements rather than passenger transportation activities.
+
+An excerpt of the resulting event log is shown in \autoref{tab:kodak-ocel-example}.
+
+
+\subsubsection{Objects}
+\label{subsec:Object_table}
+The resulting OCEL contains the object types \textit{trip}, \textit{vehicle}, \textit{stop}, \textit{route}, \textit{operator}, and \textit{agency}. The object attributes are either directly copied from the corresponding GTFS tables, derived by aggregating information from the GTFS-Realtime update streams, or obtained by translating encoded attribute values into their semantic representations. An excerpt of the resulting object table is shown in \autoref{tab:kodak-ocel-example}.
+
+For the object \textit{agency}, the attributes \texttt{agency\_id}, \texttt{agency\_name}, \texttt{agency\_timezone}, and \texttt{agency\_url} are copied directly from the GTFS \texttt{agency} table.
+
+Similarly, the object \textit{stop} receives the attributes \texttt{stop\_id}, \texttt{stop\_name}, \texttt{latitude}, and \texttt{longitude}, which are directly copied from the GTFS \texttt{stops} table.
+
+The object \textit{route} is enriched with the attributes \texttt{route\_id}, \texttt{route\_short\_name}, \texttt{route\_long\_name}, and \texttt{route\_type}, which are directly obtained from the GTFS \texttt{routes} table.
+
+For the object \textit{trip}, the attributes \texttt{trip\_id}, \texttt{direction\_id}, and \texttt{vehicle\_id} are directly obtained from the GTFS data. The attributes \texttt{avg\_speed} and \texttt{median\_speed} are derived from the GTFS-Realtime VehiclePosition feed. Vehicle position and speed updates are collected at regular intervals (Step~5 in \autoref{fig:method_detaild}) and aggregated at the trip level. This aggregation level was chosen because route-level averages are too coarse and more fine-grained levels often suffer from sparse observations. Furthermore, the attribute \texttt{vehicle\_type} is derived from the \texttt{route\_type} field by mapping the GTFS route type codes to their corresponding semantic vehicle categories.
+
+Finally, the object \textit{operator} receives the attribute \texttt{organizational\_name}, which is copied directly from the GTFS \texttt{attributions} table.
+
+
+
+
+\begin{table}[htbp]
+  \caption{Example excerpt of the Koda OTRAF OCEL, represented by event, object, and event-to-object relation tables. The top table represents the event log. The table on the bottom right contains the event-to-object relations, while the table on the bottom left contains the object data.}
+  \label{tab:kodak-ocel-example}
+  \centering
+  \scriptsize
+
+  % Events
+{\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabularx}{\textwidth}{p{1.15cm} p{3.05cm} r r r r r p{2.25cm} p{1.85cm}}
+  \toprule
+  \textbf{Event} & \textbf{Event Type} & \textbf{Lat.} & \textbf{Lon.} & \textbf{Delay} & \textbf{Occ.} & \textbf{Dist.} & \textbf{Timestamp} & \textbf{Activity Type} \\
+  \midrule
+  \texttt{ad\_1032} & departure\_stop\_Marielund      & 58.5971 & 16.1665 & -43 & 0 & 8589.54 & 2026-05-03 22:11:43 & departure\_stop \\
+  \texttt{ad\_1033} & arrive\_stop\_Risbrinksgatan    & 58.3993 & 15.6463 & -87 & 1 & 9837.43 & 2026-05-03 22:11:45 & arrive\_stop \\
+  \texttt{ad\_1034} & departure\_stop\_Risbrinksgatan & 58.3993 & 15.6463 & -87 & 1 & 9837.43 & 2026-05-03 22:11:47 & departure\_stop \\
+  \texttt{ad\_1035} & arrive\_stop\_US Södra entrén   & 58.3997 & 15.6202 & -8  & 1 & 2599.41 & 2026-05-03 22:11:52 & arrive\_stop \\
+  \bottomrule
+\end{tabularx}
+}
+
+  \vspace{0.8em}
+
+  \begin{minipage}[t]{.58\textwidth}
+    \strut\vspace*{-\baselineskip}\newline
+
+    % Objects
+    \begin{tabularx}{\textwidth}{p{2.3cm}p{1.35cm}X}
+    \toprule
+    \textbf{Object} & \textbf{Obj. type} & \textbf{Selected attributes} \\
+    \midrule
+      \texttt{55700000000001407} & agency   & agency\_name: Östgötatrafiken \\
+  \texttt{9031005900306047}  & vehicle  & vehicle\_id: 9031005900306047, vehicle\_type: Tram \\
+  
+  \texttt{9011005000200000}  & route    & route\_short\_name: 2, route\_type: 900 \\
+  \texttt{org\_1}            & operator & organization\_name: Transdev Sverige AB \\
+  \texttt{9022005001020017}  & stops    & stop\_name: Marielund \\
+  \texttt{tr03\_402}         & trip     & trip\_id: 55700000081752901, organization\_name: Transdev Sverige AB, avg\_speed: 4.225 \\
+  \texttt{9031005920505500}  & vehicle  & vehicle\_id: 9031005920505500, vehicle\_type: Bus \\
+  \texttt{9011005021300000}  & route    & route\_short\_name: 13, route\_type: 700 \\
+  \texttt{9022005001252001}  & stops    & stop\_name: Risbrinksgatan \\
+  \texttt{tr03\_6244}        & trip     & trip\_id: 55700200074053765, organization\_name: Nobina Linköping, avg\_speed: 8.51 \\
+  \texttt{org\_12}           & operator & organization\_name: Nobina Linköping \\
+  \texttt{9022005001249001}  & stops    & stop\_name: US Södra entrén \\
+  \texttt{9031005920505512}  & vehicle  & vehicle\_id: 9031005920505512, vehicle\_type: Bus \\
+  \texttt{9011005020200000}  & route    & route\_short\_name: 2, route\_type: 700 \\
+  \texttt{tr03\_3840}        & trip     & trip\_id: 55700200080646475, organization\_name: Nobina Linköping, avg\_speed: 5.8625 \\
+    \bottomrule
+    \end{tabularx}
+  \end{minipage}
+  \hfill
+    \begin{minipage}[t]{.38\textwidth}
+    \strut\vspace*{-\baselineskip}\newline
+
+    % Event-to-object relations
+    \begin{tabular}{lll}
+    \toprule
+    \textbf{Event} & \textbf{Object} & \textbf{Type} \\
+    \midrule
+    \texttt{ad\_1032} & \texttt{org\_1}            & operator \\
+    \texttt{ad\_1032} & \texttt{9011005000200000}  & route \\
+    \texttt{ad\_1032} & \texttt{9022005001020017}  & stops \\
+    \texttt{ad\_1032} & \texttt{55700000000001407} & agency \\
+    \texttt{ad\_1032} & \texttt{9031005900306047}  & vehicle \\
+    \texttt{ad\_1032} & \texttt{tr03\_402}         & trip \\
+
+    \texttt{ad\_1033} & \texttt{9011005021300000}  & route \\
+    \texttt{ad\_1033} & \texttt{tr03\_6244}        & trip \\
+    \texttt{ad\_1033} & \texttt{9022005001252001}  & stops \\
+    \texttt{ad\_1033} & \texttt{55700000000001407} & agency \\
+    \texttt{ad\_1033} & \texttt{org\_12}           & operator \\
+    \texttt{ad\_1033} & \texttt{9031005920505500}  & vehicle \\
+
+    \texttt{ad\_1034} & \texttt{9011005021300000}  & route \\
+    \texttt{ad\_1034} & \texttt{tr03\_6244}        & trip \\
+    \texttt{ad\_1034} & \texttt{9022005001252001}  & stops \\
+    \texttt{ad\_1034} & \texttt{55700000000001407} & agency \\
+    \texttt{ad\_1034} & \texttt{org\_12}           & operator \\
+    \texttt{ad\_1034} & \texttt{9031005920505500}  & vehicle \\
+
+    \texttt{ad\_1035} & \texttt{9022005001249001}  & stops \\
+    \texttt{ad\_1035} & \texttt{9011005020200000}  & route \\
+    \texttt{ad\_1035} & \texttt{55700000000001407} & agency \\
+    \texttt{ad\_1035} & \texttt{org\_12}           & operator \\
+    \texttt{ad\_1035} & \texttt{9031005920505512}  & vehicle \\
+    \texttt{ad\_1035} & \texttt{tr03\_3840}        & trip \\
+    \bottomrule
+    \end{tabular}
+  \end{minipage}  
+\end{table}
+
+\newpage
+
+
+
+
+
+\section{Transportation Concepts and Attributes}
+The following evaluation is based on several transportation artifacts that are derived from the generated OCEL. In this section, we introduce these artifacts and define their corresponding attributes, which are used throughout the remainder of this work.
+
+Before introducing the emission analysis, we define the notion of a segment. Since transportation activities are represented by events, the actual movement of a vehicle occurs between two consecutive events rather than at a single event. Therefore, quantities such as traveled distance, travel duration, fuel consumption, and emissions are naturally associated with these movements. Segments provide a representation of these movements and serve as the basis for computing and aggregating transportation-related measures. The resulting segment-level values can subsequently be aggregated to the corresponding trip. We define a segment as follows: 
+\begin{definition}[Segment]
+Let $L$ be an OCEL.
+
+A segment is a triple $(e_1,e_2,o)\in E\times E\times O$ such that
+\[
+(e_1,o),(e_2,o)\in E2O,
+\]
+\[
+\mathit{acttype}(e_1)=\textit{departure\_stop},
+\qquad
+\mathit{acttype}(e_2)=\textit{arrive\_stop},
+\]
+\[
+e_1 \prec e_2,
+\]
+\[
+\nexists\, e'\in E:
+(e',o)\in E2O
+\land
+e_1\prec e'\prec e_2.
+\]
+\label{def:segments}
+\end{definition}
+We illustrate the concept of a segment using two examples. \autoref{fig:example_sequences_trip} presents a simplified example to explain the relationship between events, segments, and trips. \autoref{fig:cards example} complements this with an example derived from the GTFS dataset, illustrating the concept on real transportation data.
+
+\begin{definition}[Segment Distance and Travel Duration]
+Let $L$ be an event log and let $(e_1,e_2,o)$ be a segment.
+
+Let $\texttt{distance}\in EA$ be the event attribute representing the cumulative traveled distance. The distance of the segment is defined as
+\begin{equation}
+dist(e_1,e_2,o)
+=
+eaval(e_2,\texttt{distance})
+-
+eaval(e_1,\texttt{distance}).
+\end{equation}
+
+The travel duration of the segment is defined as
+\begin{equation}
+duration(e_1,e_2,o)
+=
+time(e_2)-time(e_1).
+\end{equation}
+
+Let $o\in O$ with $objtype(o)=\texttt{trip}$. The travel duration of the trip is defined as the sum of the travel durations of all segments belonging to the trip:
+\begin{equation}
+duration(o)
+=
+\sum_{(e_1,e_2,o)\in Segments}
+duration(e_1,e_2,o).
+\end{equation}
+
+
+\end{definition}
+
+
+
+
+
+\begin{figure}[t]
+	\center
+	\includegraphics[width=0.8\textwidth]{thesis-main/figures/Method_figures/Trip_segment_sequence.png}
+	\caption{Example sequence showing segments that forming together to a trip.}
+	\label{fig:example_sequences_trip}
+\end{figure}
+
+\begin{figure}[t]
+	\center
+	\includegraphics[width=0.8\textwidth]{thesis-main/figures/Method_figures/cards_segments.png}
+	\caption{Example of a derived trip and its corresponding segments. Bus stops are represented by the intersections between consecutive red and white segments. Each segment describes the movement between two consecutive bus stops, while the complete sequence of segments forms a trip. The figure further illustrates the varying lengths of the individual segments, reflecting the different distances between consecutive stops.}
+	\label{fig:cards example}
+\end{figure}
+Next, we define the emissions of segments and trips based on the distance-based emission model introduced in the preliminaries. Here, $c$ denotes the consumption factor and $EF$ the emission factor.
+
+\begin{definition}[Segment and Trip Emissions]
+Let
+$e_1,e_2\in E$ be events and let $o\in O$ be an object such that
+$(e_1,e_2,o)$ is a segment.
+Furthermore, let $c \in \mathbb{R}_{>0}$ be the consumption factor and let
+$EF \in \mathbb{R}_{>0}$ be the emission factor.
+
+The distance-based emission of a segment is defined as
+\begin{equation}
+E_{\mathrm{segment}}(e_1,e_2,o)
+=
+dist(e_1,e_2,o)\cdot c \cdot EF.
+\end{equation}
+
+Let $objtype(o)=\texttt{trip}$.
+The distance-based emission of the trip is defined as the sum of the emissions of all segments belonging to the trip:
+\begin{equation}
+E_{\mathrm{trip}}(o)
+=
+\sum_{(e_1,e_2,o)\in Segments}
+E_{\mathrm{segment}}(e_1,e_2,o).
+\end{equation}
+
+\end{definition}
+The following corollary extends the emission model to route-type-specific consumption and emission factors.
+\paragraph{Mode-aware Emissions.}
+The emission model can be extended to account for different transportation modes by replacing the constant consumption factor $c$ and emission factor $EF$ with the route-type-specific factors $c_r$ and $EF_r$, respectively.

@@ -1,0 +1,152 @@
+\chapter{Implementation}
+\label{chap:impl}
+\begin{figure}[H]
+    \centering
+    \includegraphics[
+        width=0.95\textwidth,
+        height=0.78\textheight,
+        keepaspectratio
+    ]{thesis-main/figures/Implementation_figures/method_overview.png}
+    \caption{Schematic overview of retrieving GTFS data and transforming it to an OCEL. The raw data is retrieved by the TRAFIKLAB provider, and the preferred service and agency are chosen(Step 1). After that, real-time and static GTFS data are manipulated into a preliminary activity table (Step 2-7). Lastly, different components needed for the OCEL are created (Step 8-9). }
+    \label{fig:OCEL_Derivation}
+\end{figure}
+The previous chapter introduced the method for transforming GTFS and GTFS-Realtime data into an object-centric event log. This chapter describes the practical implementation of this transformation. The implementation is provided as the GTFS2OCEL Transformer, a tool that supports the retrieval, preprocessing, transformation, and export of public transportation data into the OCEL 2.0 format.
+
+The purpose of the implementation is twofold. First, it operationalizes the transformation rules defined in Chapter~\ref{chap:method} and therefore enables the reproducible generation of GTFS-based OCELs. Second, it provides an accessible interface for future users who want to create event logs from GTFS data without manually executing the individual preprocessing and transformation steps.
+
+The chapter is structured along the implemented workflow. First, the GTFS2OCEL Transformer is introduced as the central implementation artifact. Afterwards, the overall pipeline is presented. The subsequent sections describe the retrieval of GTFS data, the preprocessing of GTFS-Realtime data, the generation of the OCEL components, and the resulting output.
+
+
+\section{GTFS2OCEL}
+
+To facilitate the generation of object-centric event logs from GTFS data, we implemented \textit{GTFS2OCEL}, a graphical application that supports the transformation of GTFS Static and GTFS-Realtime data into the OCEL 2.0 format. The tool provides an interface for configuring the data retrieval and for executing the subsequent preprocessing and transformation steps.
+
+The implementation of the derivation pipeline is illustrated in \autoref{fig:OCEL_Derivation}. It consists of three main phases. First, GTFS Static and GTFS-Realtime datasets are retrieved from the KODA platform for a selected transport operator and operating day. Second, the retrieved data are preprocessed by transforming the snapshot-based GTFS-Realtime feeds into compact tabular representations and by integrating the static and realtime information into a unified activity table. Finally, the preprocessed data are transformed into an object-centric event log according to the methodology presented in Chapter~\ref{chap:method}.
+
+The individual processing steps of the workflow are summarized in \autoref{tab:ocel-derivation-steps}.
+
+The graphical user interface of GTFS2OCEL is shown in \autoref{fig:data_retrieval}. The first page provides the configuration interface for selecting the transport operator, operating day, and GTFS data sources. The second page provides access to the preprocessing and transformation steps required to generate the object-centric event log.
+
+The following sections describe the implementation of these individual workflow steps in detail.
+
+
+\begin{figure}[H]
+    \centering
+
+    
+        \centering
+        \includegraphics[width=0.8\textwidth]{thesis-main/figures/Implementation_figures/data_retrieval.png}
+        
+        
+
+    \caption{First page of the GTFS-OCEL Transformer showing the configuration interface for selecting the transport operator, operating day, and GTFS data sources.}
+    \label{fig:data_retrieval}
+\end{figure}
+
+
+\begin{table}
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\caption{Steps for deriving the object-centric event log.}
+\label{tab:ocel-derivation-steps}
+
+\begin{tabularx}{\textwidth}{
+>{\centering\arraybackslash}p{0.8cm}
+>{\raggedright\arraybackslash}p{3.2cm}
+>{\raggedright\arraybackslash}X
+}
+\toprule
+\textbf{\#} & \textbf{Step} & \textbf{Description}\\
+\midrule
+
+1 & Data Source Selection &
+Access the Trafiklab platform, select the KODA service, and choose the transport operator Östgötatrafiken as the data source. \\
+
+2 & Data Retrieval &
+Retrieve the GTFS Schedule and GTFS-Realtime datasets using the KODA API. \\
+
+3 & Enrich Stop Information &
+Enrich the GTFS-Realtime trip updates with stop information from the static \texttt{stop\_times} and \texttt{stops} tables. \\
+
+4 & Merge Static and Realtime Data &
+Combine the static and realtime activity information by replacing scheduled values with available realtime values to obtain a unified activity table. \\
+
+5 & Enrich with Vehicle Positions &
+Integrate the vehicle position data into the activity table to obtain additional attributes such as vehicle speed and passenger occupancy. \\
+
+6 & Enrich Activity Context &
+Sequentially enrich the activity table with information from the \texttt{trips}, \texttt{routes}, and \texttt{agency} tables to obtain the complete operational context for each activity. \\
+
+7 & Derive Event Types &
+Derive the event instances and their corresponding event types from the enriched activity table. \\
+
+8 & Derive OCEL Components &
+Derive the OCEL components, including object instances, object types, event types, attributes, and relationships. \\
+
+9 & Construct OCEL &
+Combine all derived OCEL components into the final Object-Centric Event Log. \\
+
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+
+\section{KODA Data Retrieval}
+
+The first phase of the GTFS2OCEL pipeline retrieves the GTFS Static and GTFS-Realtime datasets required for the subsequent transformation. As shown in \autoref{fig:data_retrieval}, the user specifies the transport operator and the operating day through the graphical user interface. Based on this configuration, GTFS2OCEL retrieves the corresponding datasets from the KODA platform.
+
+The GTFS datasets are obtained from the KODA platform\footnote{Trafiklab KODA API documentation: \url{https://www.trafiklab.se/api/our-apis/koda/}}, which provides GTFS Static and GTFS-Realtime data for Swedish public transport operators\footnote{Trafiklab GTFS Operators: \url{https://www.trafiklab.se/api/gtfs-datasets/gtfs-sweden/}}. The selected GTFS Static and GTFS-Realtime datasets serve as the input for the subsequent preprocessing and transformation steps.
+
+The available GTFS data differ between transport operators. Depending on the selected operator, different GTFS-Realtime feeds and attributes are provided, resulting in varying data availability for event log construction. An overview of the available operators and their supported GTFS data sources is shown in \autoref{fig:different_operators}. Since the proposed transformation requires information from both the \textit{TripUpdates} and \textit{VehiclePositions} feeds, operators providing these feeds are recommended. Operators additionally providing occupancy information enable the generation of sustainability-aware event logs containing passenger occupancy as an event attribute.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{thesis-main/figures/Implementation_figures/different_operators.png}
+    \caption{Overview of the public transport operators available through the KODA platform and the availability of GTFS Static, GTFS-Realtime, VehiclePositions, and occupancy data. The available data sources differ between operators.}
+    \label{fig:different_operators}
+\end{figure}
+
+The GTFS Static feed is distributed as a compressed archive containing the scheduled transportation data for the selected operator. In contrast, the GTFS-Realtime feeds are provided as collections of Protocol Buffer (protobuf) snapshots. For each operating day, the snapshots are organized in a hierarchical directory structure with separate directories for each hour, minute, and second. Consequently, a single operating day consists of several thousand protobuf files representing the operational state of the transportation system at different points in time.
+
+A practical challenge during data retrieval is the request-rate limitation imposed by the KODA platform. When downloading multiple GTFS-Realtime feeds, such as \textit{TripUpdates}, \textit{VehiclePositions}, and \textit{ServiceAlerts}, consecutive requests must be separated by short waiting periods. Otherwise, requests may be temporarily rejected due to server-side rate limiting. Therefore, GTFS2OCEL retrieves the required datasets sequentially while respecting these waiting intervals.
+
+
+\section{Preprocessing}
+
+After retrieving the GTFS Static and GTFS-Realtime datasets, the second phase of the GTFS2OCEL pipeline preprocesses the GTFS-Realtime data before the object-centric event log is constructed. The primary objective of this stage is to transform the snapshot-based GTFS-Realtime feeds into compact tabular representations that can be processed efficiently during the subsequent OCEL generation. Since the GTFS-Realtime data are provided separately for the \textit{TripUpdates} and \textit{VehiclePositions} feeds, both feeds are preprocessed independently.
+
+Each GTFS-Realtime protobuf file represents a snapshot of the transportation system at a specific point in time. A snapshot consists of a collection of \texttt{FeedEntity} objects, where each \texttt{FeedEntity} contains a realtime observation, such as a \texttt{TripUpdate} or a \texttt{VehiclePosition}. Since a single snapshot captures only the operational state at one particular timestamp, it does not necessarily contain observations for all active trips. Consequently, multiple snapshots must be processed to obtain a complete representation of the transportation processes throughout the selected operating day.
+
+During preprocessing, all protobuf snapshots of the selected operating day are processed sequentially. For each feed, only \texttt{FeedEntity} objects containing the corresponding realtime payload are considered, while all remaining entities are discarded. Subsequently, observations without a valid \texttt{trip\_id} are removed, since they cannot be linked to the corresponding trip in the GTFS Static data. For the remaining observations, the relevant attributes are extracted. From the \textit{TripUpdates} feed, these include the updated arrival and departure times, stop identifiers, stop sequences, and delay information. From the \textit{VehiclePositions} feed, the extracted attributes comprise the vehicle position, speed, occupancy status, timestamp, and the associated trip and vehicle identifiers.
+
+While preprocessing the \textit{TripUpdates} feed is computationally straightforward, preprocessing the \textit{VehiclePositions} feed is considerably more demanding due to the substantially larger number of protobuf snapshots. For the investigated datasets, processing all snapshots of an operating day in a single execution resulted in high memory consumption and long execution times. Therefore, the \textit{VehiclePositions} feed is processed incrementally. For each tenth second of a minute, all corresponding protobuf snapshots of the selected operating day are processed and exported to an intermediate CSV file. This procedure is repeated for all six ten-second intervals within each minute, after which the intermediate CSV files are concatenated into a single consolidated dataset. This incremental processing strategy significantly reduces the computational resources required during preprocessing while producing the same final output.
+
+Based on the investigated datasets, processing one \textit{VehiclePositions} snapshot every ten seconds was sufficient to capture all active \texttt{trip\_id}s while substantially reducing the preprocessing effort compared to processing every available snapshot. Therefore, a sampling interval of ten seconds is used throughout the remainder of this work.
+
+The extracted observations are appended to a tabular data structure and, after processing all protobuf snapshots, exported as a consolidated CSV file for each GTFS-Realtime feed. As a result, the preprocessing stage produces two CSV files, one for \textit{TripUpdates} and one for \textit{VehiclePositions}, as illustrated in \autoref{fig:pb_to_csv}. These files eliminate the need to repeatedly decode thousands of protobuf snapshots during the OCEL generation and serve as the input for the final transformation phase described in the following section.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{thesis-main/figures/Implementation_figures/snapshot_csv_pb.png}
+    \caption{Excerpt of the consolidated CSV file generated from the GTFS-Realtime \texttt{VehiclePositions} protobuf snapshots. The \texttt{source\_file} column identifies the original protobuf snapshot from which each observation was extracted. In this example, the suffix \texttt{00Z} indicates that the observations originate from snapshots recorded at the 0th second of each minute throughout the selected operating day. The table further contains the associated \texttt{trip\_id} and \texttt{vehicle\_id}, as well as the operational attributes \texttt{speed} and \texttt{occupancy\_status}, which are used in the subsequent OCEL generation.}
+    \label{fig:pb_to_csv}
+\end{figure}
+
+
+\section{OCEL Generation}
+
+After preprocessing, the final phase of GTFS2OCEL constructs the object-centric event log. The implementation follows the derivation methodology presented in Chapter~\ref{chap:method} and executes the remaining transformation steps summarized in \autoref{fig:OCEL_Derivation}.
+
+First, the consolidated \textit{TripUpdates} table is used to generate the auxiliary event log by creating the corresponding \textit{arrive\_stop} and \textit{departure\_stop} events. Afterwards, the auxiliary event log is successively enriched by joining the information contained in the GTFS Static tables, namely \texttt{trips}, \texttt{routes}, \texttt{agency}, and \texttt{stops}. Finally, the consolidated \textit{VehiclePositions} table is merged with the enriched activity table to associate the operational attributes, such as speed and occupancy status, with the corresponding events. The resulting enriched auxiliary event log serves as the basis for constructing the final OCEL.
+
+Based on the enriched auxiliary event log, GTFS2OCEL derives the remaining event types together with the object instances, event and object attributes, and the event-to-object and object-to-object relationships. Finally, all generated OCEL components are combined and exported as a single OCEL 2.0 event log.
+
+The complete implementation of GTFS2OCEL, including the preprocessing scripts and the event log construction, is publicly available on GitHub\footnote{\url{https://github.com/JohannesEngelhardt/Analyzing-Transport-Emissions-from-Object-Centric-Event-Logs}}. The repository also contains the generated OCELs used throughout this work as well as instructions for downloading the required GTFS and GTFS-Realtime datasets from the KODA platform and reproducing the complete transformation pipeline.
+
+
+
+
+
+

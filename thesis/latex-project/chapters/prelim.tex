@@ -1,0 +1,265 @@
+\chapter{Preliminaries}
+\label{chap:prelim}
+
+\section{Mathematical Foundations}
+
+\begin{itemize}
+  \item $\mathbb{N} = \{1, 2, 3, \dots\}$ denotes the set of \textit{natural numbers}, $\mathbb{N}_0=\mathbb{N}\cup\{0\}$ the set of \textit{natural numbers including zero}, $\mathbb{Z}$ the set of \textit{integers} and $\mathbb{R}$ the set of \textit{real numbers}. \textit{Infinity} is denoted by $\infty$ and is not contained in any of the aforementioned sets.
+
+
+
+  \item A \textit{function} $f\colon X \to Y$ assigns a value $f(x)\in Y$ to each $x\in X$.
+  A \textit{partial function} $f\colon X \nrightarrow Y$ does not necessarily map all $x\in X$ to a value in $Y$.
+  For those $x\in X$ where $f(x)$ is undefined, we write $f(x)=\bot$.
+
+  For a function or partial function $f\colon X\to Y$,
+  the \textit{range} of $f$ is given by $\operatorname{rng}(f)=\{f(x)\mid x\in X\}\setminus\{\bot\}$.
+  The \textit{domain} of $f$ is denoted by $\operatorname{dom}(f)=\{x\in X \mid f(x)\neq\bot\}$.
+
+  The \textit{inverse image} of a set $Y'\subseteq Y$ under $f$ is defined as
+  $f^{-1}(Y') = \{ x\in X \mid f(x) \in Y' \}$,
+  making $f^{-1}$ a function $\mathcal{P}(Y)\to\mathcal{P}(X)$.
+
+ 
+\end{itemize}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Object-Centric Event Log}
+To describe the OCEL public transportation data, we introduce the definition of the OCEL, based on the OCEL 2.0 Specification \cite{berti2024ocelobjectcentriceventlog}.
+	
+The following universes are defined as pairwise disjoint sets:
+	
+	\begin{itemize}[leftmargin=2em]
+		\item $\mathbb{U}_{ev}$ is the universe of events,
+		\item $\mathbb{U}_{etype}$ is the universe of event types,
+		\item $\mathbb{U}_{obj}$ is the universe of objects,
+		\item $\mathbb{U}_{otype}$ is the universe of object types,
+		\item $\mathbb{U}_{attr}$ is the universe of attribute names,
+		\item $\mathbb{U}_{qual}$ is the universe of qualifiers,
+        \item $\mathbb{U}_{act}$ is the universe of activity types,
+	\end{itemize}
+	
+	Additionally,
+	
+	\begin{itemize}[leftmargin=2em]
+		\item $\mathbb{U}_{val}$ is the universe of attribute values,
+		\item $\mathbb{U}_{time}$ is the universe of timestamps, including $0, \infty \in \mathbb{U}_{time}$, 
+		totally ordered with $0 \leq t \leq \infty$ for all $t \in \mathbb{U}_{time}$.
+	\end{itemize}
+	
+	
+	\begin{definition}[An Object-Centric Event Log (OCEL)]
+    \label{def:def_ocel}
+		An OCEL is a tuple
+		\[
+		L = (E, O, EA, OA, etype, time, objtype, eatype, oatype, eaval, oaval, E2O, O2O)
+		\]
+		where
+		\begin{itemize}[leftmargin=2em]
+			\item $E \subseteq \mathbb{U}_{ev}$ is the set of events,
+			\item $O \subseteq \mathbb{U}_{obj}$ is the set of objects,
+			\item $etype: E \to \mathbb{U}_{etype}$ assigns event types to events,
+			\item $time: E \to \mathbb{U}_{time}$ assigns timestamps to events,
+			\item $objtype: O \to \mathbb{U}_{otype}$ assigns object types to objects,
+			\item $EA \subseteq \mathbb{U}_{attr}$ is the set of event attributes,
+			\item $OA \subseteq \mathbb{U}_{attr}$ is the set of object attributes,
+			\item $eatype: EA \to \mathbb{U}_{etype}$ assigns event types to event attributes,
+			\item $oatype: OA \to \mathbb{U}_{otype}$ assigns object types to object attributes,
+			\item $eaval: (E \times EA) \nrightarrow \mathbb{U}_{val}$ assigns values to event attributes,
+			\item $oaval: (O \times OA \times \mathbb{U}_{time}) \nrightarrow \mathbb{U}_{val}$ assigns values to object attributes,
+			\item $E2O \subseteq E  \times O$ are the event-to-object relations,
+			\item $O2O \subseteq O \times \mathbb{U}_{qual} \times O$ are the qualified object-to-object relations.
+		\end{itemize}
+
+        Additionally, we define the function that assigns an activity type to an event
+	
+	\begin{itemize}[leftmargin=2em]
+		\item $acttype: E \rightarrow \mathbb{U}_{act}$ assigns event types to events,
+	\end{itemize}
+	\end{definition}
+    
+$actype$ groups event types that represent the same operational activity but differ only in additional information, such as the stop name. \\
+For example, the event types \textit{arrive\_stop\_Marielund} and \textit{arrive\_stop\_Centralstation} are both mapped to the activity type \textit{arrive\_stop}.
+
+
+\section{General Transit Feed Specification}
+\label{sec:GTFS}
+The General Transit Feed Specification (GTFS) \cite{GTFSOverview} is a standardized open data format for the exchange of public transportation schedules and geographic information. The GTFS enables agencies to publish structured data that can be consumed by a variety of software applications. 
+We distinguish between GTFS static, which consists of the scheduled data, and GTFS-Realtime, which contains the current data. 
+GTFS Schedule is a feed specification that defines a common format for static public transportation information. In its most basic form, it consists of seven files:
+
+ \texttt{agency.txt}, \texttt{routes.txt}, \texttt{trips.txt},
+\texttt{stops.txt}, \texttt{stop\_times.txt}, \texttt{calendar.txt}. Optional, there are many more, e.g., \texttt{attributions.txt}, \texttt{shapes.txt}, \texttt{transfers.txt}.
+
+\begin{figure}[H]
+	\center
+	\includegraphics[width=0.9\textwidth]{thesis-main/figures/Preliminiaries_figures/Example_Schema_GTFS.png}
+	\caption{Example Schema of GTFS.}
+	\label{fig:method_detaild}
+\end{figure}
+
+%\subsubsection{agency}
+\noindent\textbf{agency} \quad
+The agency table contains the transit organizing or conducting agency. The agency table contains information about the agency, such as an ID, which is stored in the field \texttt{agency\_id}, the name stored in the field \texttt{agency\_name}, \texttt{agency\_url}, which contains the service information page of the transit agency, and \texttt{agency\_timezone}, which describes the time zone used by the agency's schedule. This is important, as all times in GTFS Static are interpreted relative to that time zone. Furthermore, the agency table contains the primary language for the agency's public information, stored in \texttt{agency\_lang}, and the public phone number for customer service, stored in \texttt{agency\_phone}. The agency table has a static relationship to the routes table. One agency can operate multiple routes.
+
+\par\medskip
+\noindent\textbf{routes} \quad
+The routes table defines routes or lines operated by the agency. The routes table contains information about the conducted routes, such as the ID, which is stored in the field \texttt{route\_id}. The field \texttt{agency\_id} contains the ID of the agency that operates the route. The field \texttt{route\_short\_name} stores the line number, whereas the field \texttt{route\_long\_name} describes the full descriptive name, e.g., \enquote{North Coast NSW Line (Service no. 033)}. The field \texttt{route\_desc} contains an optional free-text description of the route, for example, the type of transport mode used. The field \texttt{route\_type} describes which transport mode is used. Similar to the agency table, the field \texttt{route\_url} stores the link to the website containing information about the route. The field \texttt{route\_color} stores the text color used in maps or displays. One route contains multiple trips. \begin{table}[htbp]
+
+
+\centering
+\caption{Overview of Transport Service Code Ranges for the field \texttt{route\_type}}
+\label{tab:transport-service-codes}
+\begin{tabular}{lll}
+\hline
+\textbf{Code Range} & \textbf{Main Category} & \textbf{Examples} \\
+\hline
+100--117   & Railway Service          & High Speed Train, regional train, suburban railway \\
+200--209   & Coach Service            & Long-distance coach, coach \\
+400--405   & Urban Railway Service    & Metro, subway, monorail \\
+700--716   & Bus Service              & Bus, regional bus, express bus, night bus, school bus \\
+800        & Trolleybus Service       & Trolleybus \\
+900--906   & Tram Service             & Streetcar, tram \\
+1000       & Water Transport Service  & Water transport in general \\
+1100       & Air Service              & Air transport \\
+1200       & Ferry Service            & Ferry \\
+1300--1307 & Aerial Lift Service      & Gondola, cable car, chairlift \\
+1400       & Funicular Service        & Funicular railway \\
+1500--1507 & Taxi Service             & Taxi, shared taxi, water taxi \\
+1700--1702 & Miscellaneous Service    & Other means of transport \\
+\hline
+\end{tabular}
+\end{table}
+
+\par\medskip
+\noindent\textbf{trip} \quad
+The trips table represents individual trips that belong to a route. The trips table consists of the field \texttt{route\_id}, which works as a reference to the route table for which it is an instance. The field \texttt{service\_id} is a reference to the service calendar, i.e., the set of dates on which the trip runs. The field \texttt{trip\_id} is the unique identifier of the trip. The field \texttt{trip\_headsign} stores the destination label shown to passengers, often displayed on vehicles or in timetables. The field \texttt{trip\_short\_name} stores an optional short name or an identifier for the trip. The field \texttt{direction\_id} indicates the direction of travel, usually 0 or 1. The field \texttt{block\_id} is an optional identifier that groups consecutive trips operated by the same vehicle, but is not always contained in the table. The field \texttt{shape\_id} is a reference to the geometry or path that the vehicle follows for the trip. One trip consists of multiple stop times.
+
+\par\medskip
+\noindent\textbf{stops} \quad
+The stops table contains information about physical locations where passengers can board or exit transit vehicles. The field \texttt{stop\_id} is the unique identifier of a stop and is used as a reference in other GTFS tables, especially in \texttt{stop\_times}. The field \texttt{stop\_code} stores an optional short code used by the transit agency to identify the stop. The field \texttt{stop\_name} contains the human-readable name of the stop, which is typically shown to passengers. The field \texttt{stop\_desc} stores an optional description that provides additional information about the stop. The fields \texttt{stop\_lat} and \texttt{stop\_lon} define the geographic location of the stop using latitude and longitude coordinates. The field \texttt{zone\_id} assigns the stop to a fare zone, if such a structure exists in the feed. The field \texttt{stop\_url} stores an optional webpage with information about the stop. The field \texttt{location\_type} indicates whether the entry is a stop, station, or another type of location. The field \texttt{parent\_station} links a stop to a larger station. The field \texttt{stop\_timezone} defines the time zone of the stop, if it differs from the agency time zone. The field \texttt{wheelchair\_boarding} indicates whether the stop is accessible for wheelchair users.
+
+
+
+\par\medskip
+\noindent\textbf{stop\_times} \quad
+The stop\_times table contains the arrival and departure times for each stop of a trip. The field \texttt{trip\_id} is a reference to the trip table and links each stop time entry to a specific trip. The field \texttt{arrival\_time} stores the scheduled arrival time at a stop. The field \texttt{departure\_time} stores the scheduled departure time from a stop. The field \texttt{stop\_id} is a reference to the stop table and identifies the stop to which the timing information belongs. The field \texttt{stop\_sequence} defines the order of the stops within the trip. The field \texttt{stop\_headsign} stores an optional destination name that is shown to passengers and can change during the trip. The field \texttt{pickup\_type} shows whether passengers can board at the stop. The field \texttt{drop\_off\_type} shows whether passengers can leave the vehicle at the stop. The fields \texttt{continuous\_pickup} and \texttt{continuous\_drop\_off} indicate whether boarding or alighting is allowed between stops. The field \texttt{shape\_dist\_traveled} stores the cumulative distance traveled from the beginning of a trip. Its value is updated at each stop and represents the total distance covered by the vehicle upon reaching the corresponding stop. For each arrival and departure of the bus stop, the traveled distance is updated if this information is available. The field \texttt{timepoint} shows whether the given time values are exact or only approximate.
+
+
+
+
+
+\par\medskip
+\noindent\textbf{calendar} \quad
+The calendar table describes on which days a service is available. The field \texttt{service\_id} is the unique identifier of the service. The fields \texttt{monday}, \texttt{tuesday}, \texttt{wednesday}, \texttt{thursday}, \texttt{friday}, \texttt{saturday}, and \texttt{sunday} show whether the service runs on the corresponding day of the week. The fields \texttt{start\_date} and \texttt{end\_date} define the time period in which the service is active.
+
+
+\par\medskip
+\noindent\textbf{calenader\_dates} \quad
+The calendar\_dates table contains exceptions to the regular service calendar. The field \texttt{service\_id} identifies the service that is affected. The field \texttt{date} specifies the day of the exception. The field \texttt{exception\_type} indicates whether the service is added or removed on that date.
+
+\par\medskip
+\noindent\textbf{shapes} \quad
+The shapes table describes the physical path that a vehicle follows during a trip. The field \texttt{shape\_id} is the unique identifier of the shape and is used to connect it to trips. The fields \texttt{shape\_pt\_lat} and \texttt{shape\_pt\_lon} store the latitude and longitude of each point on the path. The field \texttt{shape\_pt\_sequence} defines the order of the points along the route. The field \texttt{shape\_dist\_traveled} stores the distance from the beginning of the shape to each point, if available.
+
+\par\medskip
+\noindent\textbf{attributions} \quad
+The attributions table contains information about transport operators contracted by the transit agency. The table enables the identification of the organization responsible for operating a specific service. The field \texttt{trip\_id} is the unique identifier and is used to connect it to trips. The field \texttt{organizational\_name} contains the operator contracted by the agency. The field \texttt{is\_operator} describes whether the mentioned operator is an operator.
+
+\vspace{0.2cm}
+GTFS-Realtime \cite{GTFSRealtimeReference} is a feed specification that contains updated information about current arrival and departure times, service alerts, and vehicle position. Compared to GTFS Static, GTFS-Realtime has no tables but a Protobuf-Stream \cite{protobuf}. The protobuf-stream is a sequence of data packages that gets stored in the protocol buffers format. The messages are binary encoded. The data gets stored in a hierarchy depending on which time the protobuf-stream was recorded. For each day, we record each hour. GTFS-Realtime does not define a fixed amount of protobuf data stored per hour. Instead, the size of the feed depends on the number of active entities and the frequency of updates, which usually occur every few seconds.
+The information are generated and provided by the agency from their operation systems, such as the automatic vehicle location system, the dispatch system, and the disruption management systems. 
+\par\medskip
+\noindent\textbf{TripUpdates} \quad
+The trip update protobuf stream provides regular updates of the arrival and departure times for each trip. Next to the \texttt{trip\_id}, which has the same meaning as in the trip table, we get actual information on the involved vehicle with the field \texttt{vehicle\_id}. We get information on which stop\_sequence  and stop\_id is involved. Furthermore, we get information about the amount of delay that is stored in the field delay.
+
+
+\par\medskip
+\noindent\textbf{VehicleUpdates} \quad
+The vehicle update protobuf stream provides regular updates about the current location of the vehicle for each trip. Similar to the trip updates, we have the trip\_id and the vehicle\_id. Furthermore, we have additional information relevant for operational and sustainability aspects, e.g., occupancy\_status and speed. For the occupancy\_status we have a detailed description in \autoref{tab:occupancy_status_gtfs_rt}
+\begin{table}[H]
+    \centering
+    \caption{Occupancy status levels in GTFS-Realtime}
+    \begin{tabular}{c p{0.7\textwidth}}
+        \hline
+        \textbf{Occupancy Status} & \textbf{Description} \\
+        \hline
+        0 & Empty or almost empty; many seats are available. \\
+        1 & Many seats are available. \\
+        2 & Few seats are available. \\
+        3 & Standing room only; all seats are occupied. \\
+        4 & Crushed standing room only; the vehicle is crowded. \\
+        5 & Full; the vehicle is considered full. \\
+        6 & Not accepting passengers. \\
+        \hline
+    \end{tabular}
+    
+    \label{tab:occupancy_status_gtfs_rt}
+\end{table}
+
+
+\par\medskip
+\noindent\textbf{ServiceAlerts} \quad
+The ServiceAlerts protobuf stream updates for each trip updated information about the service. An alert can contain a URL, header text with a short summary of the alert, a description with a longer explanation of the disruption, the active period in which the alert should be shown, and an informed entity that contains information on which part of the network is affected, e.g., which route, trip, or stop. Furthermore, the service alert contains the cause and the effect.
+
+
+%\subsection{Emission Based Costing}
+%In this subsection, we review established costing approaches, namely Activity-Based Costing (ABC) and Time-Driven Activity-Based Costing (TDABC). Building on these concepts, we then extend the discussion towards sustainability-oriented accounting by illustrating how the underlying allocation mechanisms can be applied to environmental impacts instead of monetary costs.
+
+
+%\subsubsection{Activity-Based Costing}
+
+%\subsubsection{Time-Driven Activity-Based Costing}###
+
+
+\section{Transportation Emission Estimation}
+
+Transportation emissions are commonly estimated by combining activity data with emission factors. According to the Greenhouse Gas Protocol, greenhouse gas emissions are obtained by multiplying activity data, such as fuel or energy consumption, with an emission factor that converts the consumed amount into greenhouse gas emissions. Based on this principle, we define the distance-based and duration-based emission estimation used throughout this thesis \cite{ghg_protocol}.
+
+\begin{definition}[Distance-based and duration-based emission estimation]
+Let $EF \in \mathbb{R}_{>0}$ be an emission factor, let
+$c \in \mathbb{R}_{>0}$ be a consumption factor, and let
+$d \in \mathbb{R}_{>0}$ be the traveled distance.
+Furthermore, let
+$v \in \mathbb{R}_{>0}$ be a representative vehicle speed and let
+$t \in \mathbb{R}_{>0}$ be the travel duration.
+
+The distance-based emission is defined as
+\begin{equation}
+E_{\mathrm{distance}}
+=
+d \cdot c \cdot EF.
+\end{equation}
+
+If the traveled distance is unavailable, it is estimated from the travel duration and a representative vehicle speed as
+
+\begin{equation}
+d_{\mathrm{est}}
+=
+t \cdot v.
+\end{equation}
+
+Based on the estimated distance, the duration-based emission estimate is defined as
+
+\begin{equation}
+E_{\mathrm{duration}}
+=
+d_{\mathrm{est}} \cdot c \cdot EF.
+\end{equation}
+\end{definition}
+
+The consumption factor $c$ describes the average amount of fuel or energy required to travel one unit of distance, for example liters of diesel per kilometer. The emission factor $EF$ is a conversion factor that specifies the amount of greenhouse gas emissions released per unit of consumed fuel or energy, for example kilograms of $\mathrm{CO_2e}$ per liter of diesel. Consequently, the product $c \cdot EF$ represents the greenhouse gas emissions generated per unit of traveled distance. The duration-based approach estimates the traveled distance using a representative vehicle speed before applying the same emission model.

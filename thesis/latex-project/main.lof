@@ -1,0 +1,20 @@
+\babel@toc {USenglish}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Example of a log graph constructed from the event log shown in Table~\ref {tab: Example_Event_Log}. Event nodes are shown as white ovals, while object nodes are highlighted in color (e.g., vehicle objects in blue, process object in yellow). The structure illustrates an event--object--event connection: events are indirectly related to each other through shared objects. Starting from the event \texttt {depart1\_v1}, BFS can traverse the graph via the vehicle \texttt {v1} and systematically discover candidate end events.}}{12}{figure.caption.8}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Schematic overview of the proposed method. The OCEL~2.0 log is transformed into a log graph, candidate pairs are identified in two phases, selected using a scoring function, and enriched with emissions data to produce the sOCEL output.}}{15}{figure.caption.11}%
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Enriched log graph where \emph {start}, \emph {depart} are the assigned start events (green) and \emph {arrive}, \emph {end} are the assigned end events (yellow). In this example, the reference objects is vehicle with its instances \emph {v1}, \emph {v2} with the purple circle. The event nodes hold a simplified version of timestamps where we just see the seconds that passed.}}{18}{figure.caption.12}%
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Example of a log graph where the path to the reference objects and end events are blocked by an resource object employse}}{22}{figure.caption.15}%
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Three different Enriched Log Graphs, two different outcomes. The top example, leads to a temporal valid trip as the temporal monotonicity condition is not violated. For the examples below, the temporal monotonicity is violated. The temporal mode has here its limit.}}{25}{figure.caption.20}%
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Example constellation \textit {(end, start, order)} in the bus transportation event log. Here we see the case when the }}{35}{figure.caption.37}%
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Similar to the bus transportation example, both the load truck and both vehicle objects are heading to the collect Goods. But before the vehicle object has to be traversed but due to the time constraint not reachable. In terms of time the reference object lies in front of the the start and end event }}{36}{figure.caption.40}%
+\contentsline {figure}{\numberline {5.3}{\ignorespaces Another situation. In terms of time the reference object lies behind the start and end event and is blocked after returning to the end event.}}{37}{figure.caption.41}%
+\contentsline {figure}{\numberline {5.4}{\ignorespaces The first is that for the first end event and the start event from a time perspective it is good, but it is blocked by the time constraint on the path. After vehicle the timestamps event is bigger than the timestamps end event. Fortunately, the second end event is matched because we allow to after we visited the reference object to turn back.}}{38}{figure.caption.42}%
+\contentsline {figure}{\numberline {5.5}{\ignorespaces the reference objects are out of scope. Empfehlung Tao Object zu machen ähnlich zu Tao activität aus conformance checking}}{39}{figure.caption.45}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

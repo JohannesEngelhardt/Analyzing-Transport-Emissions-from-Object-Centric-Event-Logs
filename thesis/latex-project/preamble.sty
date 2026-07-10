@@ -1,0 +1,183 @@
+\ProvidesPackage{preamble}
+
+%-------------------
+% Math
+%-------------------
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\RequirePackage{amsthm}
+\RequirePackage{mathtools}
+\RequirePackage{tabularx}
+\RequirePackage{siunitx}
+% Eigene Befehle und Operatoren
+\newcommand{\Cand}{\mathcal{C}} % Kandidatenmenge
+\DeclareMathOperator*{\argmin}{arg\,min} % argmin-Operator
+\newcommand{\ev}[2]{\texttt{{\small #1\_}#2}}
+
+
+% Number sets
+\newcommand*{\B}{\lbrace 0,1\rbrace}
+\newcommand*{\N}{\mathbb N}
+\newcommand*{\Z}{\mathbb Z}
+\newcommand*{\Q}{\mathbb Q}
+\newcommand*{\R}{\mathbb R}
+
+% Mathematical symbols
+\newcommand*{\pto}{\rightharpoonup}
+\DeclareMathOperator*{\dom}{dom}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand*{\coloniff}{\;\vcentcolon\mathrel{\mkern-5mu}\iff}
+\newcommand*{\iffcolon}{\iff\mathrel{\mkern-5mu}\vcentcolon\;}
+\DeclarePairedDelimiter\abs\lvert\rvert
+\DeclarePairedDelimiter\seq\langle\rangle
+\providecommand\given{}
+\newcommand\SetSymbol[1][]{%
+	\nonscript\:#1\vert
+	\allowbreak
+	\nonscript\:
+	\mathopen{}}
+\DeclarePairedDelimiterX\Set[1]\lbrace\rbrace{%
+	\renewcommand\given{\SetSymbol[\delimsize]}
+	#1
+}
+\DeclarePairedDelimiterX\MultiSet[1]\lbrack\rbrack{%
+	\renewcommand\given{\SetSymbol[\delimsize]}
+	#1
+}
+\DeclarePairedDelimiterXPP{\lang}[1]{\mathcal L}{(}{)}{}{#1}
+
+% Process Mining specific symbols
+\newcommand*{\pset}{{\bullet}}
+\newcommand*{\nomove}{{\gg}}
+\DeclarePairedDelimiter{\fire}{\lbrack}{\rangle}
+\DeclarePairedDelimiter{\reach}{\lbrack}{\rangle}
+
+% Theorem styles
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}{Corollary}[theorem]
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+
+%-------------------
+% Lists and Tables
+%-------------------
+\RequirePackage{enumitem}
+\RequirePackage{booktabs}
+\RequirePackage{array}
+\RequirePackage{multirow}
+
+
+%-------------------
+% Graphics
+%-------------------
+\RequirePackage[subrefformat=parens]{subcaption}
+\RequirePackage{rotating}
+\RequirePackage{float}
+\RequirePackage[format=plain,justification=justified,singlelinecheck=false]{caption}
+
+
+
+%-------------------
+% Citations and References
+%-------------------
+\RequirePackage[autostyle=true]{csquotes}
+\RequirePackage[
+	backend=biber,
+	style=numeric-comp,
+	sorting=nyvt,
+	sortcites=true,
+	uniquename=init,
+	giveninits=false,
+	maxbibnames=99,
+	maxcitenames=2,
+	minnames=1,
+	%isbn=false,
+	%url=false,
+]{biblatex}
+\DeclareNameAlias{sortname}{family-given}
+\DeclareSourcemap{
+	\maps[datatype=bibtex]{
+		\map[overwrite]{
+			\step[fieldsource=doi, final]
+			\step[fieldset=issn, null]
+			\step[fieldset=url, null]
+			\step[fieldset=eprint, null]
+		}
+	}
+}\DeclareFieldFormat{eprint:urn}{%
+	URN\addcolon\space
+	\ifhyperref
+	{\href{http://www.nbn-resolving.org/#1}{\nolinkurl{#1}}}
+	{\nolinkurl{#1}}
+}
+
+%\addbibresource{reference.bib}
+
+
+%-------------------
+% Links
+%-------------------
+\RequirePackage{hyperref}
+\RequirePackage[noabbrev,capitalize]{cleveref}
+
+
+%-------------------
+% Author Support
+%-------------------
+\RequirePackage{todonotes}
+
+%--------------------
+% Algorithms
+%---------------------
+\RequirePackage[ruled,vlined]{algorithm2e}
+\SetKwInput{KwIn}{Input}
+\SetKwInput{KwOut}{Output}
+
+%--------------------
+% pm commands
+%---------------------
+\newcommand{\Univ}[1]{\mathbb{U}_{\mathit{#1}}}
+\newcommand{\EA}{\mathit{EA}}
+\newcommand{\OA}{\mathit{OA}}
+\newcommand{\ea}{\mathit{ea}}
+\newcommand{\oa}{\mathit{oa}}
+\newcommand{\evtype}{\mathit{evtype}}
+% \newcommand{\time}{\mathit{time}}
+\newcommand{\objtype}{\mathit{objtype}}
+\newcommand{\eatype}{\mathit{eatype}}
+\newcommand{\oatype}{\mathit{oatype}}
+\newcommand{\eaval}{\mathit{eaval}}
+\newcommand{\oaval}{\mathit{oaval}}
+\newcommand{\EtoO}{\mathit{E2O}}
+\newcommand{\OtoO}{\mathit{O2O}}
+\newcommand{\ET}{\mathit{ET}}
+\newcommand{\OT}{\mathit{OT}}
+\newcommand{\ETL}{\mathit{ET}(L)}
+\newcommand{\OTL}{\mathit{OT}(L)}
+\newcommand{\et}{\mathit{et}}
+\newcommand{\ot}{\mathit{ot}}
+\newcommand{\QEtoOL}{Q_{\EtoO}(L)}
+\newcommand{\QOtoOL}{Q_{\OtoO}(L)}
+
+
+%--------------
+% Colors
+%-------------
+
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{ragged2e}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{needspace}
+
+\endinput
+

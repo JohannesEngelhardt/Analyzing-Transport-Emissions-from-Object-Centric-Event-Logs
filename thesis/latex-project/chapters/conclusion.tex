@@ -1,0 +1,23 @@
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+In this thesis, we investigated the suitability of GTFS and GTFS-Realtime data for object-centric sustainability analysis in Process Mining. The motivation for this work was the limited availability of publicly accessible object-centric event logs containing sustainability-relevant information that can be used to evaluate emission estimation methods and sustainability-oriented process mining techniques.
+
+This work makes three main contributions. First, we present GTFS2OCEL, a transformation pipeline that converts GTFS and GTFS-Realtime data into sustainability-aware object-centric event logs by deriving events, objects, relationships, and emission-related attributes. Second, we provide publicly available OCELs that enable reproducible sustainability analyses and serve as a benchmark for future process mining research. Third, we evaluate the suitability of travel duration as a proxy for traveled distance and quantify the resulting approximation error for transportation emission estimation.
+
+The evaluation demonstrates that GTFS and GTFS-Realtime data provide sufficient operational information to support sustainability analysis. The generated event logs enable emission calculations on the segment, trip, and route levels and support existing object-centric process mining techniques for identifying emission-intensive transportation processes. Furthermore, the evaluation shows that travel duration provides a suitable approximation of traveled distance when explicit distance information is unavailable. Although this introduces approximation errors, the results indicate that the resulting estimates remain sufficiently accurate for many practical sustainability analyses.
+
+Overall, this work demonstrates that GTFS2OCEL systematically transforms publicly available GTFS data into sustainability-aware object-centric event logs and thereby establishes a foundation for future research at the intersection of Process Mining, public transportation, and sustainability.
+
+\paragraph{Future Work.}
+Future work could extend the proposed approach in several directions. First, GTFS2OCEL could be extended to support a broader range of GTFS and GTFS-Realtime datasets with varying data quality, feed structures, and available attributes.
+
+Second, additional heuristics could be developed to derive further operational activities from GTFS data. The current approach relies on a small set of heuristics to identify operational phases such as \textit{begin\_shift}, \textit{parking}, and \textit{change\_direction}. Future work could incorporate additional operational knowledge, such as depot locations, driver schedules, vehicle rotations, or legally required breaks, to derive further activity types and improve the semantic representation of transportation processes.
+
+Third, more detailed vehicle position data could be incorporated. Higher-frequency GPS observations would allow trips to be divided into smaller driving segments and enable the derivation of more fine-grained driving activities, such as \textit{drive-20km/h} or \textit{drive-50km/h}. This would improve the accuracy of emission estimation by capturing different traffic situations.
+
+Fourth, the generated event logs could be enriched with external information, such as vehicle models, fuel types, fuel consumption, passenger capacity, or depot locations. This would reduce the number of assumptions required for emission estimation and enable more accurate sustainability analyses.
+
+Future work could also investigate the applicability of GTFS2OCEL to other transportation domains, such as logistics, where vehicles likewise follow predefined routes and operational schedules.
+
+Finally, GTFS and GTFS-Realtime data provide an opportunity for comparative process mining. While GTFS describes the planned transportation process, GTFS-Realtime captures its actual execution. Transforming both perspectives into object-centric event logs would enable systematic conformance checking and comparative analyses to identify delays, operational deviations, and their impact on transportation emissions.

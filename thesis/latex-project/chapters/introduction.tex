@@ -1,0 +1,62 @@
+\chapter{Introduction}
+\label{chap:intro}
+In this work, we investigate the suitability of GTFS data for transportation sustainability analysis in Process Mining. We present \textit{GTFS2OCEL}, a construction pipeline that transforms GTFS Static and GTFS-Realtime data into the OCEL 2.0 format by deriving events, objects, relationships, and sustainability-relevant attributes from publicly available transportation data. Furthermore, we provide the generated sustainability-aware OCELs as publicly available datasets for future process mining and sustainability research.
+
+To demonstrate the usefulness of the generated event logs, we conduct two complementary evaluations. First, we investigate whether travel duration and GPS-based routing distances can be used as substitutes for traveled distance in transportation emission estimation. This evaluation addresses the common problem that detailed distance information is often unavailable in transportation datasets. Second, we demonstrate the applicability of the generated OCELs for sustainability analysis by using existing object-centric process mining techniques to identify inefficient transportation behavior and evaluate potential emission reduction strategies. In particular, we show how comparative process analysis can be used to identify low-occupancy trips and assess opportunities to reduce emissions by optimizing transportation processes.
+
+The results show that GTFS2OCEL successfully transforms GTFS data into sustainability-aware object-centric event logs, providing a suitable basis for transportation emission analysis. Furthermore, the generated OCELs support both the evaluation of transportation emission estimation methods and the application of Object-Centric Process Mining techniques for identifying opportunities to reduce transport-related emissions.
+
+\section{Motivation}
+\label{sec:intro_ssec:motiv}
+Recent advances in process mining have shown that sustainability analyses can be integrated into process analysis by combining event data with emission factors. Existing approaches estimate emissions at the event level, identify emission-intensive process variants, and allocate emissions to business objects to support applications such as carbon accounting and Life Cycle Assessment (LCA). In particular, object-centric approaches such as OCEAn \cite{ocean} enable the allocation of event emissions to different object types, providing multiple sustainability perspectives on the same process.
+Despite these advances, two major challenges remain.
+The first challenge is data availability. Existing approaches assume that an object-centric event log containing transportation processes and sustainability-relevant information is already available. However, the creation of such event logs from operational transportation data is outside the scope of these approaches. Consequently, sustainability analyses for transportation processes are often limited by the lack of publicly available transportation OCELs. Existing research therefore frequently relies on proprietary company data, manually constructed datasets, stakeholder interviews, or simulated process executions, making experiments difficult to reproduce and benchmark.
+The second challenge is data completeness. Emission estimation methods typically require activity-specific information such as traveled distance, fuel consumption, or energy demand. In practice, however, transportation datasets differ considerably in the information they provide. While some datasets contain traveled distances, others only provide travel durations, GPS coordinates, vehicle positions, or stop locations. As a result, it remains unclear whether these alternative attributes can be used as substitutes for traveled distance and how much uncertainty they introduce into the resulting emission estimates. Quantifying this estimation error is essential for assessing the reliability of transportation sustainability analyses when complete operational data are unavailable.
+This thesis addresses both challenges. First, it transforms publicly available GTFS and GTFS-Realtime data into sustainability-relevant object-centric event logs by deriving events, objects, relationships, and emission-relevant attributes. The resulting event logs provide a publicly available foundation for transportation sustainability research and enable the application of existing OCPM techniques to real transportation processes. Second, this thesis evaluates the suitability of alternative activity measures for transportation emission estimation by investigating travel duration and GPS-based routing distances as substitutes for traveled distance. Finally, the applicability of the resulting event logs is demonstrated through sustainability-oriented process mining analyses that identify operational improvement opportunities and support the evaluation of emission reduction strategies.
+
+\section{Problem Statement}
+\label{sec:intro_ssec:probs}
+Transportation sustainability analysis requires event logs that describe transportation processes together with operational information relevant for emission estimation. However, publicly available transportation datasets are typically not represented as object-centric event logs and therefore cannot be directly analyzed using existing object-centric event log techniques. Furthermore, transportation datasets differ considerably in the information they provide. While some datasets contain traveled distances, others only provide travel durations, GPS coordinates, or vehicle positions. Consequently, it remains unclear whether these datasets can support reliable transportation emission estimation and sustainability analyses.
+\section{Research Questions}
+
+To achieve the goal providing useful sustainability data for process mining and insights about time-driven approaches to compute emissions we state the following research questions:
+
+
+
+\begin{enumerate}
+	\item What publicly available transportation data is available, and which types are suitable?
+    \item What publicly available data containing GPS information is available for public transport analyses ?
+	\item What OCPM techniques are available for creating OCELs, in order to build an OCEL for sustainability analysis using publicly available sources and data?
+	\item What are the characteristics and attributes that drive sustainability analysis forward?
+	\item What has been done so far with GTFS data and sustainability?
+    \item To what extent do distance-based emission estimates differ from time-based emission estimates?
+    \item Can travel duration be used as an alternative cost driver for trip-level emission estimation?
+    \item How do time-driven and distance-driven emission estimation approaches differ when applied to public transportation trips?
+    \item What does GTFS contribute to sustainability analysis for process mining?
+
+\end{enumerate}
+
+
+\section{Research Goals}
+
+\begin{itemize}
+    \item Find a suitable source of data that is appropriate for the sustainability analysis 
+	\item Create an object-centric event log for sustainability analysis based on real GTFS data
+	\item Creating a pipeline to retrieve GTFS data
+	\item Assess the suitability of durations as a proxy for distances in the calculation
+	\item Analysis of the event log and its utility for sustainability analysis.
+    
+\end{itemize}
+
+\section{Contributions}
+The contribution of this thesis is to enable future process mining and sustainability research and provide the process mining community with OCELs based on GTFS data. By that we providing necessary data which are currently rare. It provides approach to retrieve the data and use it for sustainability analysis
+\begin{enumerate}
+    \item Access to several GTFS-based object-centric event logs
+    \item A construction pipeline to transform GTFS data into a OCEL
+    \item Analysis of the usefulness of duration as proxy for distance
+\end{enumerate}
+
+
+\section{Thesis Structure}
+
+The remainder of this thesis is structured as follows. \autoref{chap:related_work} reviews related work on transportation emission analysis, Process Mining, and Object-Centric Process Mining. \autoref{chap:prelim} introduces the necessary preliminaries on Object-Centric Event Logs, Process Mining, and GTFS data. \autoref{chap:method} presents the proposed methodology for constructing sustainability-aware OCELs from GTFS data. \autoref{chap:impl} describes the implementation of GTFS2OCEL, including data retrieval, preprocessing, and OCEL generation. \autoref{chap:eval} evaluates the generated event logs by analyzing their suitability for transportation emission analysis and by investigating the use of travel duration as a proxy for traveled distance in emission estimation. Finally, \autoref{chap:conclusion} summarizes the main findings, discusses the limitations of the proposed approach, and outlines directions for future work.

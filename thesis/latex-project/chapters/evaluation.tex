@@ -1,0 +1,1561 @@
+\clearpage
+\par
+\normalfont
+\normalsize
+\justifying
+\chapter{Evaluation}
+\label{chap:eval}
+
+In this chapter, we evaluate the proposed approach from three perspectives. First, we validate the generated GTFS-based Object-Centric Event Log by analyzing its structural properties and the availability of sustainability-relevant information. This includes descriptive statistics of the event log as well as operational characteristics that demonstrate whether the generated OCEL captures meaningful transportation processes and provides the information required for sustainability analysis.
+
+Second, we evaluate the reliability of transportation emission estimation when alternative activity measures have to be used instead of traveled distance. In particular, we investigate whether travel duration and GPS-based routing distances can serve as suitable substitutes for traveled distance and quantify the resulting estimation error.
+
+Third, we demonstrate the applicability of the generated event log for sustainability-oriented Process Mining. Using existing analysis techniques, we identify operational patterns and investigate how the derived event log can support the identification and evaluation of potential emission reduction opportunities.
+
+
+
+\section{Evaluation Setup}
+The evaluation is conducted on four Object-Centric Event Logs generated from the KODA Trafiklab GTFS and GTFS-Realtime data. All event logs are created using the transformation approach presented in Chapter \ref{chap:method}. The datasets represent public transportation operations from the same region but were collected on four different dates, allowing the evaluation to cover different seasons of the year. The only difference between the event logs is the publication date of the underlying GTFS data. An overview of the evaluated datasets is provided in \autoref{tab:event-log-overview}.
+The event log KODA OTRAF 2026-05-04 corresponds to the dataset presented in Chapter \ref{chap:method} and represents public transportation operations on a regular weekday. The remaining event logs were generated from data collected three, six, and nine months earlier, namely KODA OTRAF 2026-02-04, KODA OTRAF 2025-11-04, and KODA OTRAF 2025-08-04, respectively. Using multiple datasets allows us to evaluate the proposed approach under different seasonal conditions while keeping the transformation pipeline unchanged.
+
+%For the computation of the emissions, we use the following formula:
+
+
+\begin{table}[H]
+%\centering
+\caption{Metrics on the event logs used in the evaluation.}
+\label{tab:event-log-overview}
+
+\renewcommand{\arraystretch}{1.55}
+\setlength{\tabcolsep}{5pt}
+
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrllrrrr}
+\toprule
+\textbf{Dataset}
+& \textbf{Event}
+& \textbf{Event Types}
+& \textbf{Objects}
+& \textbf{Object Types}
+& \textbf{Min. Timestamp}
+& \textbf{Max. Timestamp}
+& \textbf{Min. Trace}
+& \textbf{Avg. Trace}
+& \textbf{Max. Trace}
+& \textbf{Variants} \\
+\midrule
+
+KODA OTRAF 2026-05-04
+& 216,197
+& 3,049
+& 8,429
+& 6
+& 2026-05-03 21:39:16
+& 2026-05-04 22:46:18
+& 7
+& 45.9
+& 126
+& 1596 \\
+
+KODA OTRAF 2026-02-04
+& 215,672
+& 3,055
+& 8,431
+& 6
+& 2025-02-03 22:39:00
+& 2025-02-04 22:59:21
+& 3
+& 43.74
+& 124
+& 1578 \\
+
+KODA OTRAF 2025-11-04
+& 212,218
+& 2,963
+& 8,552
+& 6
+& 2025-11-03 22:39:14
+& 2025-11-04 23:15:22
+& 3
+& 41.47
+& 124
+& 1712 \\
+
+KODA OTRAF 2025-08-04
+& 167,422
+& 2,895
+& 7,243
+& 6
+& 2025-08-03 21:39:12
+& 2025-08-04 23:04:51
+& 3
+& 42.05
+& 122
+& 1319 \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+\section{Validation of the Generated GTFS-based OCEL}
+Before evaluating transportation emission estimation, we first validate whether the generated GTFS-based OCEL provides the structural and operational information required for sustainability analyses. The objective of this validation is not to assess emission results but to verify that the generated event log correctly represents transportation processes and contains the information required by existing sustainability-oriented Process Mining techniques.
+
+\subsection{Structural Validation}
+To assess whether the generated OCEL provides a suitable basis for sustainability analyses, we first examine its structural characteristics. The objective is to verify that the transformation produces a complete object-centric event log containing multiple object types, a sufficient number of events, and diverse process executions.
+
+
+
+
+
+\autoref{tab:event-log-overview} summarizes the structural properties of the generated OCEL using the KODA OTRAF dataset from 2026-05-04 as a representative example. The event log contains 226,201 events related to 8,546 objects from seven object types, representing one day of public transportation operations. The observation period corresponds to the available GTFS-Realtime data extract selected for this study. Furthermore, the event log contains 1,032 different process variants, indicating that the generated data capture a diverse set of transportation process executions rather than only a small number of repetitive behavior patterns. Overall, these statistics show that the transformation produces a structurally rich object-centric event log that forms the basis for the following sustainability analyses.
+\subsection{Activity and Object Type Distribution}
+
+Besides the overall event log statistics, it is important to verify that the generated OCEL contains the expected transportation activities and object types. Their distribution provides an indication of whether the transformation correctly represents the operational behavior of the transportation process.
+\begin{table}[h]
+\centering
+\begin{minipage}[t]{0.45\textwidth}
+\caption{Number of events per event type.}
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Activity Type} & \textbf{Count} \\
+\midrule
+arrive\_stop & 105,372 \\
+departure\_stop & 105,337 \\
+direction\_change & 3,535 \\
+begin\_shift & 2,356 \\
+parking & 613 \\
+\bottomrule
+\end{tabular}
+
+\label{tab:event_type_counts}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\textwidth}
+\caption{Number of objects per object type.}
+\centering
+\begin{tabular}{lr}
+\toprule
+\textbf{Object Type} & \textbf{Count} \\
+\midrule
+trip & 5,002 \\
+stops & 3,092 \\
+vehicle & 326 \\
+route & 116 \\
+operator & 9 \\
+agency & 1 \\
+\bottomrule
+\end{tabular}
+\label{tab:object_type_counts}
+\end{minipage}
+\end{table}
+The almost identical number of arrival and departure events is expected because each scheduled stop typically generates one arrival and one departure event. Small deviations originate from the first and last stop of trips, where only one of the two events may be present.
+
+\subsection{Validation of Derived Operational Attributes
+}
+In this subsection, we evaluate the plausibility of the derived operational attributes. In particular, we analyze the behavior of the delay and occupancy attributes throughout individual trips to assess how these operational characteristics are represented in the generated OCEL and whether they provide meaningful information for subsequent sustainability analyses.
+
+
+\begin{figure}[H]
+    \centering
+
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{thesis-main/figures/Evaluation_figure/distribution_of_delay.png}
+       \caption{Occupancy}
+        \label{fig:streuung_delay}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{thesis-main/figures/Evaluation_figure/Distribution_of_occupancy.png}
+        \caption{Delay}
+        \label{fig:streeung_occupancy}
+    \end{subfigure}
+
+    \caption{Event-wise distribution of the derived delay and occupancy attributes in the generated OCEL.}
+    \label{fig:streuung}
+\end{figure}
+
+\autoref{fig:streuung_delay} and \autoref{fig:streeung_occupancy} present the event-wise distribution of the derived delay and occupancy attributes. Both attributes show a broad range of values across all events, indicating that the generated OCEL preserves the operational information contained in the GTFS-Realtime feed. \autoref{fig:number_values_delay_per_trip} and \autoref{fig:number_values_occupancy_per_trip} further analyze the behavior of these attributes at the trip level. While delay changes throughout most trips, occupancy remains constant for almost all trips. This indicates that delay is continuously updated during vehicle operation, whereas occupancy is reported as a trip-level attribute in the evaluated GTFS-Realtime dataset.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{thesis-main/figures/Evaluation_figure/unique_delay_values_per_trip.png}
+    \caption{Distribution of the number of distinct delay values per trip. More than one distinct value indicates that the delay attribute changes during trip execution.}
+    \label{fig:number_values_delay_per_trip}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{thesis-main/figures/Evaluation_figure/unique_occupancy_values_per_trip.png}
+    \caption{Distribution of the number of distinct delay values per trip. More than one distinct value indicates that the delay attribute changes during trip execution.}
+    \label{fig:number_values_occupancy_per_trip}
+\end{figure}
+\newpage
+\section{Alternative Distance Estimation for Emission Calculation}
+Emission estimation in this work relies on the event attribute \texttt{distance}. Although the generated OCEL contains this attribute, it also includes the underlying GPS coordinates and travel durations from which alternative distance estimates can be derived. This enables us to evaluate different approaches for obtaining the \texttt{distance} attribute and to assess their suitability for emission estimation.
+In particular, we investigate two alternatives. First, we evaluate road distances computed from the GPS coordinates using the Open Source Routing Machine (OSRM). Second, we investigate whether travel duration can be transformed into traveled distance by assuming a representative vehicle speed. Both approaches are compared against the reference \texttt{distance} values stored in the OCEL.
+The objective of this evaluation is to determine how accurately the \texttt{distance} attribute can be approximated using information commonly available in transportation data and to quantify the expected estimation accuracy for emission calculations at different aggregation levels.
+
+\subsection{GPS-Based Distance Estimation}
+The first approach evaluates GPS-based distance estimation. The activity types \textit{departure\_stop} and \textit{arrive\_stop} contain both the cumulative \texttt{distance} attribute and the geographic coordinates of each stop. For every segment between two consecutive stops, the reference segment distance is obtained from the difference between the cumulative \texttt{distance} values, while the corresponding GPS-based road distance is calculated using the Open Source Routing Machine (OSRM)\footnote{Open Source Routing Machine (OSRM), an open-source routing engine for shortest-path routing on road networks. See: \url{https://project-osrm.org/}}. Both distance measures are then compared to evaluate the suitability of GPS-based distance estimation for subsequent emission calculations. The output of this evaluation is the estimation error of the GPS-based distances with respect to the reference \texttt{distance} values stored in the OCEL.
+
+
+\begin{figure}
+\centering
+\setlength{\abovecaptionskip}{2pt}
+\setlength{\belowcaptionskip}{0pt}
+
+\begin{subfigure}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/Eval_Shape_vs_Road_Distance_05_04.png}
+    \caption{Shape vs. road distance for 2026-05-04}
+    \label{fig:shape-road-scatter-05-04}
+\end{subfigure}
+\hspace{0.02\textwidth}
+\begin{subfigure}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/Eval_Shape_vs_Road_Distance_02_04.png}
+    \caption{Shape vs. road distance for 2026-02-04}
+    \label{fig:shape-road-scatter-02-04}
+\end{subfigure}
+
+%\vspace{-0.2cm}
+
+\begin{subfigure}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/Eval_Shape_vs_Road_Distance_08_04.png}
+    \caption{Shape vs. road distance for 2025-08-04}
+    \label{fig:shape-road-scatter-08-04}
+\end{subfigure}
+\hspace{0.02\textwidth}
+\begin{subfigure}{0.47\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/Eval_Shape_vs_Road_Distance_11_04.png}
+    \caption{Shape vs. road distance for 2025-11-04}
+    \label{fig:shape-road-scatter-11-04}
+\end{subfigure}
+
+
+
+\caption{Comparison of reference segment distances and GPS-derived road distances across the KODA datasets.}
+\label{fig:shape-road-distance-scatter-comparison}
+\end{figure}
+
+\autoref{fig:shape-road-distance-scatter-comparison} compares the reference segment distances with the corresponding GPS-derived road distances across the four KODA datasets. The scatter plots evaluate the agreement between both distance measures and thereby assess the suitability of GPS-derived distances as an alternative to the reference segment distances.
+
+For the datasets shown in \autoref{fig:shape-road-scatter-05-04}, \autoref{fig:shape-road-scatter-02-04}, and \autoref{fig:shape-road-scatter-08-04}, corresponding to the dates 2026-05-04, 2026-02-04, and 2025-08-04, most observations lie close to the identity line, indicating a strong agreement between the reference segment distances and the GPS-derived road distances. Most deviations are located above the identity line, indicating a slight overestimation of the reference segment distance by the GPS-based approach.
+
+In contrast, the dataset for 2025-11-04 shown in \autoref{fig:shape-road-scatter-11-04} exhibits a larger dispersion around the identity line. In this case, both underestimation and overestimation occur, particularly for shorter segments, resulting in a lower agreement between the two distance measures.
+To complement the visual comparison shown in \autoref{fig:shape-road-distance-scatter-comparison}, \autoref{fig:gps-distance-error-comparison} quantifies the approximation accuracy of the GPS-derived segment distances using the mean absolute percentage error (MAPE). As expected, the highest relative errors are observed for shorter segments. However, this behavior is mainly caused by the shorter reference distances rather than substantially larger absolute deviations. Across all distance bins, the absolute difference between the reference and GPS-derived segment distances remains relatively constant, while the relative error decreases with increasing segment length. Overall, the results indicate that GPS-derived road distances provide a reliable approximation of the reference segment distances for subsequent emission estimation.
+
+\begin{figure}[H]
+\centering
+
+\includegraphics[width=0.9\textwidth]{thesis-main/figures/Evaluation_figure/gps_distance_mape_by_distance_bin_all_datasets.png}
+
+\caption{Error characteristics of GPS-based road-distance estimates across KODA datasets.}
+\label{fig:gps-distance-error-comparison}
+\end{figure}
+
+
+
+
+
+
+\subsection{Duration-Based Distance Estimation}
+The second approach investigates whether travel duration can be used to estimate the traveled distance. Unlike GPS-based distance estimation, travel duration is only indirectly related to traveled distance and therefore requires the assumption of a representative vehicle speed. Before evaluating different speed assumptions, we first analyze the relationship between segment distance and travel duration. The output of this analysis is an overview of the segment distance distribution, the average travel time for different segment distances, and the corresponding standard deviation of travel times. These characteristics provide the basis for interpreting the subsequent duration-based distance estimation.
+
+~\autoref{fig:segment_distance_distribution} provides an overview of the segment characteristics contained in the OCEL. The first plot shows that most segments are between 200 m and 800 m in length, with the highest number of segments occurring in the 200–400 m, 400–600 m, and 600–800 m distance bins. Consequently, these segment lengths dominate the dataset and should be represented accurately by any representative speed used for duration-based distance estimation. This distribution is expected because public transportation routes are designed with relatively short distances between consecutive stops, especially in urban areas where accessibility is prioritized. As a result, representative speed assumptions should primarily reflect these dominant segment lengths, since they contribute most to the overall emission estimates.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{thesis-main/figures/Evaluation_figure/segment_counts_by_distance_bin.png}
+    \caption{Distribution of segment distances across the KODA datasets. Most segments fall into the distance bins between 200 m and 800 m.}
+    \label{fig:segment_distance_distribution}
+\end{figure}
+
+~\autoref{fig:segment_average_travel_time} shows the average travel time for each distance bin. While the average travel time increases with segment distance, the increase is not proportional. This indicates that travel time is determined by more than distance alone. Operational activities and traffic conditions introduce additional time that does not increase proportionally with the traveled distance. Consequently, the implied average speed differs across the distance bins, with longer segments exhibiting higher average speeds than shorter segments. This suggests that a single representative speed may not accurately describe all segment lengths.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{thesis-main/figures/Evaluation_figure/average_travel_time_by_distance_bin.png}
+    \caption{Average travel time by segment distance bin, illustrating the relationship between segment length and average travel time.}
+    \label{fig:segment_average_travel_time}
+\end{figure}
+The observation is supported by \autoref{fig:standard_deviation_distance_segment}, which shows the standard deviation of travel times within each distance bin. Especially for the shorter distance bins, the variability is comparatively high, as more obstacles occur in the traffic, indicating that segments of similar length can have substantially different travel times. Consequently, the approximation accuracy of duration-based distance estimation depends on both the selected representative speed and the underlying segment length.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{thesis-main/figures/Evaluation_figure/travel_time_std_by_distance_bin.png}
+    \caption{Standard deviation of travel times by segment distance bin, illustrating the variability of travel times within each distance interval.}
+    \label{fig:standard_deviation_distance_segment}
+\end{figure}
+
+Consequently, no single representative speed is expected to accurately approximate the traveled distance across all segment lengths. Therefore, the following analysis evaluates different representative speed values to determine which one provides the most accurate overall approximation of the reference distances.
+
+
+\subsection{Deriving Representative Speed Values}
+To estimate traveled distance from travel duration, a representative speed is required. While the travel duration is directly available in the OCEL, the corresponding vehicle speed is unknown. The previous analysis showed that speed characteristics differ across segment lengths, indicating that the choice of a representative speed is not straightforward. The objective of this subsection is therefore to quantify the estimation error that has to be expected when duration-based distance estimation is used for emission calculations. Since estimation errors may accumulate or partially compensate across different aggregation levels, the evaluation is performed on the segment, trip, and dataset levels. To achieve this, the subsection is divided into two parts. First, representative speed candidates are derived from the available vehicle position data and evaluated to determine which one best approximates the reference distances. Second, we investigate the expected estimation accuracy when no vehicle position data are available in the OCEL and a constant representative speed has to be used for duration-based distance estimation.
+
+\subsubsection{Expected Estimation Accuracy Using Empirical Speed Values}
+Vehicle position data provide repeated observations of the current vehicle speed throughout each trip. Although the update interval is not fixed, vehicle positions are recorded frequently during operation, resulting in a large number of speed observations for each trip. These observations are used to derive representative speed values for duration-based distance estimation.
+To derive representative speed values, the individual speed observations are aggregated at the trip level. Aggregating speeds at the segment level would be strongly affected by the high variability observed in the previous analysis, whereas aggregating at the route level would combine trips with different traffic conditions and operational characteristics. Therefore, the trip level is selected as an appropriate level of aggregation for deriving representative speed values. The representative speed candidates are evaluated on the segment, trip, and dataset levels. The segment level is particularly relevant because it most closely resembles the activity level used in transportation-related emission analyses, where emissions are assigned to individual transportation activities. The trip and dataset levels are additionally considered to investigate how aggregation affects the estimation accuracy.
+
+Figure~\ref{fig:MAPE-Segment-Trip} compares the approximation accuracy of the representative speed candidates using the Mean Absolute Percentage Error (MAPE). The evaluation is performed on both the segment and trip levels. While the segment level reflects the expected approximation error for individual transportation activities, the trip level allows us to assess whether estimation errors accumulate or partially compensate when segments are aggregated into complete trips.
+
+Figure~\autoref{fig:MAPE-segment} shows that the average speed, median speed, and the quantiles Q58, Q60, and Q62.5 achieve very similar approximation accuracies, with MAPE values of approximately 35--40\% across all datasets, as these representative speed values are close to each other. In contrast, Q25 and Q75 result in substantially larger errors. A plausible explanation is that lower speed quantiles are dominated by slow operational situations, such as stops and traffic congestion, whereas higher speed quantiles represent only faster driving conditions. Consequently, neither extreme adequately reflects the typical driving behavior across all segments.
+\begin{figure}[H]
+   \centering
+
+    \begin{subfigure}{0.85\textwidth}
+     %   \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/co2_emission_mape_segment_level.png}
+        \caption{Mean Absolute Percentage Error of the Segment-Level Emission Estimates Using Empirical Speed Values for Duration-Based Distance Estimation.}
+        \label{fig:MAPE-segment}
+    \end{subfigure}
+
+    
+
+    \begin{subfigure}{0.85\textwidth}
+       % \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/co2_emission_mape_trip_level.png}
+        \caption{Mean Absolute Percentage Error of Trip-Level Emission Estimates Obtained by Aggregating Segment-Level Emissions Using Duration-Based Distance Estimation.}
+        \label{fig:MAPE-trip}
+    \end{subfigure}
+
+    \caption{Mean Absolute Percentage Error of the Estimated Emissions Compared to the Reference Emissions}
+    \label{fig:MAPE-Segment-Trip}
+\end{figure}
+
+
+Although several representative speed candidates perform similarly on the segment level, it remains unclear whether this behavior is preserved when emissions are aggregated to complete trips.
+
+~\autoref{fig:MAPE-trip} shows that aggregating segments into complete trips generally reduces the approximation error for all representative speed candidates except Q25. This indicates that over- and underestimations of individual segments partially compensate each other at the trip level. Moreover, clearer differences between the representative speed candidates emerge. While the average speed and median speed still produce approximation errors of around 25\%, the quantiles around the 60th percentile achieve noticeably lower errors. Among the evaluated candidates, Q62.5 yields the lowest trip-level MAPE, closely followed by Q60 and Q58.
+
+
+
+While the MAPE quantifies the magnitude of the approximation error, it does not indicate whether the estimated emissions are systematically over- or underestimated. Therefore, \autoref{tab:co2-emission-mean-percentage-error} analyzes the mean percentage error of the evaluated representative speed candidates on the segment and trip levels. To facilitate the comparison, the smallest absolute mean percentage error for each dataset and aggregation level is highlighted in green, whereas the largest absolute mean percentage error is highlighted in red.
+
+\begin{table}[H]
+\caption{Mean percentage error of the CO$_2$ emission estimates obtained using empirical speed values for duration-based distance estimation, grouped by dataset and aggregation level. Positive values indicate overestimation, whereas negative values indicate underestimation.}
+\label{tab:co2-emission-mean-percentage-error}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrrr}
+\toprule
+\textbf{Dataset}
+& \textbf{Level}
+& \textbf{Avg. speed}
+& \textbf{Median speed}
+& \textbf{Q25}
+& \textbf{Q58}
+& \textbf{Q60}
+& \textbf{Q62.5}
+& \textbf{Q75} \\
+\midrule
+
+KODA 2026-02-04
+& Segment
+& -14.86
+& -14.46
+& \cellcolor{red!25} -74.46
+& \cellcolor{green!25} 2.25
+& 6.31
+& 11.45
+& 35.61 \\
+
+KODA 2026-02-04
+& Trip
+& -25.04
+& -24.83
+& \cellcolor{red!25} -78.93
+& -9.77
+& -6.15
+& \cellcolor{green!25} -1.65
+& 19.80 \\
+
+KODA 2026-05-04
+& Segment
+& -14.50
+& -14.96
+& \cellcolor{red!25} -74.16
+& \cellcolor{green!25} 1.88
+& 6.05
+& 11.30
+& 36.64 \\
+
+KODA 2026-05-04
+& Trip
+& -24.73
+& -25.21
+& \cellcolor{red!25} -78.30
+& -10.21
+& -6.53
+& \cellcolor{green!25} -1.95
+& 20.25 \\
+
+KODA 2025-08-04
+& Segment
+& -14.12
+& -12.90
+& \cellcolor{red!25} -71.17
+& \cellcolor{green!25} 3.39
+& 7.31
+& 12.13
+& 35.32 \\
+
+KODA 2025-08-04
+& Trip
+& -24.82
+& -24.03
+& \cellcolor{red!25} -76.76
+& -9.38
+& -5.91
+& \cellcolor{green!25} -1.64
+& 19.20 \\
+
+KODA 2025-11-04
+& Segment
+& -14.27
+& -14.80
+& \cellcolor{red!25} -73.07
+& \cellcolor{green!25} 1.71
+& 5.88
+& 10.94
+& 36.24 \\
+
+KODA 2025-11-04
+& Trip
+& -25.00
+& -25.83
+& \cellcolor{red!25} -78.24
+& -10.94
+& -7.21
+& \cellcolor{green!25} -2.67
+& 19.72 \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\autoref{tab:co2-emission-mean-percentage-error} shows consistent trends across all KODA datasets. The average speed and median speed systematically underestimate the reference emissions on both aggregation levels, with the underestimation becoming more pronounced after aggregating segments into complete trips. The lower quantile Q25 exhibits the largest underestimation, whereas Q75 consistently overestimates the emissions. In contrast, the quantiles around the 60th percentile provide the most balanced approximation. While Q58, Q60, and Q62.5 slightly overestimate the emissions on the segment level, the aggregation to complete trips substantially reduces this bias, resulting in only a small underestimation on the trip level. Among these candidates, Q62.5 achieves the smallest bias on the trip level, whereas Q58 provides the smallest bias on the segment level.
+
+Although the previous analyses identify representative speed candidates with low approximation errors and limited estimation bias, the final objective is to accurately estimate the total emissions of an entire transportation dataset. Therefore, \autoref{tab:kodak-emission-distance-comparison} compares the aggregated emission estimates with the reference emissions for each KODA dataset. Cells highlighted in red indicate a deviation greater than 5\%, yellow indicates a deviation between 1\% and 5\%, and green indicates a deviation below 1\%.
+\begin{table}[H]
+%\centering
+\caption{Comparison of the reference and estimated CO$_2$ emissions obtained using empirical speed values for duration-based distance estimation across the KODA datasets at the overall dataset level.}
+\label{tab:kodak-emission-distance-comparison}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrrr}
+\toprule
+\textbf{Dataset}
+& \textbf{Actual}
+& \textbf{Avg. speed}
+& \textbf{Median speed}
+& \textbf{Q25}
+& \textbf{Q58}
+& \textbf{Q60}
+& \textbf{Q62.5}
+& \textbf{Q75} \\
+\midrule
+
+KODA OTRAF 2026-02-04
+& 94241.4
+& \cellcolor{red!25}74411.7
+& \cellcolor{red!25}75858.1
+& \cellcolor{red!25}26119.6
+& \cellcolor{yellow!35}89870.7
+& \cellcolor{green!25}93333.9
+& \cellcolor{yellow!35}97778.6
+& \cellcolor{red!25}118529.0 \\
+
+KODA OTRAF 2026-05-04
+& 94840.9
+& \cellcolor{red!25}75000.1
+& \cellcolor{red!25}75783.7
+& \cellcolor{red!25}25697.8
+& \cellcolor{yellow!35}90112.3
+& \cellcolor{yellow!35}93673.6
+& \cellcolor{yellow!35}98264.5
+& \cellcolor{red!25}120165.0 \\
+
+KODA OTRAF 2025-08-04
+& 76339.3
+& \cellcolor{red!25}60533.5
+& \cellcolor{red!25}61873.3
+& \cellcolor{red!25}22638.4
+& \cellcolor{yellow!35}73248.2
+& \cellcolor{green!25}76012.1
+& \cellcolor{yellow!35}79394.7
+& \cellcolor{red!25}95628.7 \\
+
+KODA OTRAF 2025-11-04
+& 93957.8
+& \cellcolor{red!25}74330.5
+& \cellcolor{red!25}74627.5
+& \cellcolor{red!25}25976.1
+& \cellcolor{red!25}88688.6
+& \cellcolor{yellow!35}92290.6
+& \cellcolor{yellow!35}96670.7
+& \cellcolor{red!25}118739.0 \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+The dataset-level results confirm the observations from the segment- and trip-level analyses. The average speed, median speed, and Q25 consistently underestimate the total emissions, whereas Q75 systematically overestimates them. The representative speed candidates around the 60th percentile provide substantially more accurate approximations across all datasets. In particular, Q60 consistently yields the closest approximation to the reference emissions, achieving deviations below 1\% for two datasets and below 2\% for the remaining datasets. Based on these results across the segment, trip, and dataset levels, the 60th percentile is selected as the representative speed for the subsequent evaluation. A plausible explanation is that bus operations contain many low-speed observations caused by stopping, passenger boarding, and traffic conditions. These observations reduce the mean and median speeds, whereas the 60th percentile better reflects the typical cruising speed between stops, resulting in the most accurate overall approximation.
+
+
+
+
+
+
+
+
+\subsubsection{Expected Estimation Accuracy Using Constant Speed Values}
+
+
+The previous analysis assumes that vehicle position data are available and that representative speed values can be derived from observed vehicle speeds. However, in many transportation datasets, such speed information is not available. In this case, duration-based distance estimation has to rely on externally defined constant speed values.
+To evaluate this scenario, we use constant speed assumptions for different traffic situations based on \cite{friederich2007buskosten}. In particular, we evaluate 20~km/h as an approximation for inner-city traffic, 40~km/h for traffic outside dense urban areas, and 60~km/h for federal roads. In addition, we evaluate a simple rule that assumes 20~km/h for segments with a travel duration below five minutes and 40~km/h otherwise. 
+
+The objective is to quantify the expected estimation error when no vehicle position data are available and distance has to be approximated only from travel duration and externally defined speed assumptions.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{thesis-main/figures/Evaluation_figure/constant_speed_segment_mape_by_method_all_kodak.png}
+\caption{Constant speed values: Mean absolute percentage error of the segment-level emission estimates using duration-based distance estimation.}
+    \label{fig:constant-speed-MAPE-segment}
+\end{figure}
+
+
+
+
+\autoref{fig:constant-speed-MAPE-segment} and \autoref{fig:constant-MAPE-trip} compare the approximation accuracy of the evaluated constant speed assumptions using the Mean Absolute Percentage Error (MAPE) on the segment and trip levels.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{thesis-main/figures/Evaluation_figure/constant_speed_trip_mape_by_method_all_kodak.png}
+\caption{Constant speed values: Mean absolute percentage error of the trip-level emission estimates obtained by aggregating segment-level emissions using duration-based distance estimation.}
+    \label{fig:constant-MAPE-trip}
+\end{figure}
+
+On the segment level (\autoref{fig:constant-speed-MAPE-segment}), the constant speed assumption of 20~km/h and the combined 20/40~km/h rule achieve similar approximation errors of approximately 40\% across all datasets. The constant speed of 40~km/h results in higher errors of approximately 50--60\%, whereas the assumption of 60~km/h performs worst with MAPE values exceeding 100\%. 
+
+On the trip level (\autoref{fig:constant-MAPE-trip}), the approximation error decreases for the 40~km/h assumption and the combined 20/40~km/h rule, indicating that part of the segment-level estimation error is compensated when aggregating complete trips. In contrast, only a minor improvement is observed for the 20~km/h assumption, while the constant speed of 60~km/h continues to exhibit the largest approximation error. Overall, the combined 20/40~km/h rule achieves the lowest trip-level MAPE across all datasets, closely followed by the constant speed of 20~km/h.
+
+Similar to the previous analysis, \autoref{tab:constant-speed-co2-emission-mean-percentage-error} reports the mean percentage error of the evaluated constant speed assumptions on the segment and trip levels. The smallest absolute mean percentage error for each dataset and aggregation level is highlighted in green, whereas the largest absolute mean percentage error is highlighted in red.
+
+The results reveal consistent estimation biases across all KODA datasets. The constant speed assumptions of 20~km/h and the combined 20/40~km/h rule systematically underestimate the reference emissions by approximately 30--38\% on both aggregation levels. In contrast, the constant speed of 40~km/h consistently overestimates the emissions by approximately 25--40\%, while the assumption of 60~km/h exhibits the largest estimation bias, exceeding 85\% on the trip level and 100\% on the segment level. These observations explain why the 20~km/h assumption and the combined 20/40~km/h rule achieved comparatively low MAPE values in the previous analysis despite systematically underestimating the reference emissions.
+\begin{table}[H]
+%\centering
+\caption{Mean percentage error of the CO$_2$ emission estimates using constant speed values for duration-based distance estimation in the absence of vehicle speed information, grouped by dataset and aggregation level. Positive values indicate overestimation, whereas negative values indicate underestimation.}
+\label{tab:constant-speed-co2-emission-mean-percentage-error}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Dataset}
+& \textbf{Level}
+& \textbf{20 km/h}
+& \textbf{40 km/h}
+& \textbf{60 km/h}
+& \textbf{(20 km/h, 40km/h)} \\
+\midrule
+
+KODA 2026-02-04
+& Segment
+& -30.28
+& 39.44
+& \cellcolor{red!25} 109.15
+& \cellcolor{green!25} -29.06 \\
+
+KODA 2026-02-04
+& Trip
+& -34.81
+& \cellcolor{green!25} 30.38
+& \cellcolor{red!25} 95.58
+& -30.61 \\
+
+KODA 2026-05-04
+& Segment
+& -30.72
+& 38.57
+& \cellcolor{red!25} 107.85
+& \cellcolor{green!25} -29.31 \\
+
+KODA 2026-05-04
+& Trip
+& -35.04
+& \cellcolor{green!25} 29.92
+& \cellcolor{red!25} 94.88
+& -30.44 \\
+
+KODA 2025-08-04
+& Segment
+& -35.21
+& \cellcolor{green!25} 29.58
+& \cellcolor{red!25} 94.37
+& -34.06 \\
+
+KODA 2025-08-04
+& Trip
+& -37.72
+& \cellcolor{green!25} 24.56
+& \cellcolor{red!25} 86.84
+& -33.72 \\
+
+KODA 2025-11-04
+& Segment
+& -30.28
+& 39.44
+& \cellcolor{red!25} 109.15
+& \cellcolor{green!25} -29.06 \\
+
+KODA 2025-11-04
+& Trip
+& -34.81
+& \cellcolor{green!25} 30.38
+& \cellcolor{red!25} 95.58
+& -30.61 \\
+
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+Finally, \autoref{tab:calculation-constant-speed-emissions} compares the aggregated emission estimates with the reference emissions on the dataset level. As in the previous analysis, cells highlighted in red indicate deviations greater than 5\%, yellow indicates deviations between 1\% and 5\%, and green indicates deviations below 1\%.
+
+The dataset-level results confirm the previous observations. The constant speed assumptions of 20~km/h, 60~km/h, and the combined 20/40~km/h rule consistently deviate by more than 5\% from the reference emissions for all datasets. In contrast, the constant speed of 40~km/h provides the closest approximation of the total emissions, with deviations between approximately 3\% and 4\% across all datasets. Consequently, among the evaluated constant speed assumptions, 40~km/h provides the most suitable approximation when no vehicle speed information is available.
+
+
+
+\begin{table}[H]
+%\centering
+\caption{Comparison of the reference and constant-speed-based CO$_2$ emission estimates across the KODA datasets at the overall dataset level.}
+\label{tab:calculation-constant-speed-emissions}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+\textbf{Dataset} & \textbf{Actual} & \textbf{20 km/h} & \textbf{40 km/h} & \textbf{60 km/h} & \textbf{20/40 km/h rule} \\
+\midrule
+KODA 2026-02-04 & 94241.4 & \cellcolor{red!25}48596.5 & \cellcolor{yellow!35}97192.9 & \cellcolor{red!25}145789.4 & \cellcolor{red!25}55647.6 \\
+KODA 2026-05-04 & 94840.9 & \cellcolor{red!25}48577.7 & \cellcolor{yellow!35}97155.3 & \cellcolor{red!25}145733.0 & \cellcolor{red!25}55784.6 \\
+KODA 2025-08-04 & 76339.3 & \cellcolor{red!25}37071.7 & \cellcolor{yellow!35}74143.4 & \cellcolor{red!25}111215.1 & \cellcolor{red!25}42657.7 \\
+KODA 2025-11-04 & 93957.8 & \cellcolor{red!25}48689.4 & \cellcolor{yellow!35}97378.7 & \cellcolor{red!25}146068.1 & \cellcolor{red!25}56149.0 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+%In unserem GTFS Datenset wurde eine attribut shape-distance mitgegeben, diese beschreibt welche Distanz wirklich zurückgelegt worden ist. Diese ist aber nicht immer gegeben, was aber immer gegeben ist sind die GPS-Locations der Bushaltestellen.
+
+
+%\subsection{Analysis of Segment Distances and Travel Times}
+ 
+
+
+\iffalse
+\begin{figure}[htbp]
+%\centering
+
+\begin{minipage}[t]{0.24\textwidth}
+    %\centering
+
+    \begin{subfigure}{\textwidth}
+        %\centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Eval_Duration_for_Distance/Average_Travel_Time_by_Distance_Bin_2026_05_04.png}
+        \caption{Caption 1.}
+        \label{fig:image-1}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+       % \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Eval_Duration_for_Distance/STD_2026_05_04.png}
+        \caption{Caption 2.}
+        \label{fig:image-2}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+       % \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Eval_Duration_for_Distance/Distance_vs_Travel_Time_2026_05_04.png}
+        \caption{Caption 3.}
+        \label{fig:image-3}
+    \end{subfigure}
+
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.24\textwidth}
+   % \centering
+
+    \begin{subfigure}{\textwidth}
+     %   \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval5/Distribution_Distance_Bin_2026-02-04.png}
+        \caption{Caption 4.}
+        \label{fig:image-4}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+     %   \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval5/STD_2026-02-04.png}
+        \caption{Caption 5.}
+        \label{fig:image-5}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+      %  \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval5/Dist_vs_Travel_time_2026-02-04.png}
+        \caption{Caption 6.}
+        \label{fig:image-6}
+    \end{subfigure}
+
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.24\textwidth}
+   % \centering
+
+    \begin{subfigure}{\textwidth}
+      %  \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval6/Distribution_Distance_2025_11_04.png}
+        \caption{Caption 7.}
+        \label{fig:image-7}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+        %\centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval6/STD_25_11_04.png}
+        \caption{Caption 8.}
+        \label{fig:image-8}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+       % \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval6/Dist_vs_Travel_Time_2025_11_04.png}
+        \caption{Caption 9.}
+        \label{fig:image-9}
+    \end{subfigure}
+
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.24\textwidth}
+    %\centering
+
+    \begin{subfigure}{\textwidth}
+        %\centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval7/Distribution_Dist_2025_08_04.png}
+        \caption{Caption 10.}
+        \label{fig:image-10}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+       % \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval7/STD_2025_08_04.png}
+        \caption{Caption 11.}
+        \label{fig:image-11}
+    \end{subfigure}
+
+    \vspace{0.5em}
+
+    \begin{subfigure}{\textwidth}
+       % \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Fachliche_Analyse_Bilder/Eval7/Dist_Vs_Travel_duration_2025_08_04.png}
+        \caption{Caption 12.}
+        \label{fig:image-12}
+    \end{subfigure}
+
+\end{minipage}
+
+\caption{Overall caption for all twelve figures.}
+\label{fig:twelve-figures-four-columns}
+\end{figure}
+
+\fi
+
+
+
+
+
+
+%%%% Hier muss noch Beispiel rein wie wir das berechnet haben, was shape-dist und was GPS-Dist ist. 
+
+
+
+
+
+
+
+\subsection{Summary}
+Overall, the evaluation shows that travel duration can be used as a proxy for estimating the traveled distance when no distance information is available in the GTFS data. Across all evaluated datasets, the 60th percentile provides the most accurate approximation and is therefore selected for the subsequent emission evaluation.
+
+Although the speed-based approach consistently outperforms the evaluated constant-speed assumptions, the improvement remains relatively small. This can be explained by the fact that the constant values of 20, 40, and 60~km/h already represent realistic operating speeds and therefore provide a reasonable approximation of the traveled distance. Consequently, replacing a constant speed with a representative speed derived from the data reduces the approximation error, but does not fundamentally change the estimation accuracy.
+
+The results further indicate that approximation errors of approximately 35--40\% on the segment level must be expected when travel distance is estimated solely from travel duration. On the trip level, these errors are partially compensated because over- and underestimations accumulate, resulting in lower overall errors. Therefore, the remaining error is primarily caused by the limited information contained in the available GTFS data rather than by the choice of the representative speed.
+
+These findings are particularly relevant for activity-based sustainability approaches such as OCEAn \cite{ocean}, where emissions are first calculated for individual activities before being aggregated to higher object levels. When duration-based distances are used instead of measured distances, activity-level emission estimates should therefore be interpreted with an expected approximation error of around 35--40\%. However, when these activity-level emissions are aggregated to trips, routes, vehicles, or other object perspectives, part of the estimation error is compensated, resulting in substantially more accurate aggregated emission estimates.
+
+Achieving substantially higher estimation accuracy would require a different level of data granularity. Instead of approximating the distance between two consecutive stops using a single representative speed, the route would need to be divided into smaller segments with more detailed observations of the vehicle movement. Such an approach would require additional data sources or a different event log construction method and is therefore left for future work.
+
+
+
+
+\section{Gaining Operational Insights for Emission Reduction}
+
+
+In this section, we evaluate the usefulness of the event logs in regard to emission analysis by providing operational insights for emission reduction. 
+
+\begin{table}[H]
+%\centering
+\scriptsize
+\caption{Emission and consumption assumptions used in the route-type-specific emission calculation.}
+\label{tab:emission-consumption-assumptions}
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.1}
+
+\begin{tabularx}{\textwidth}{c l l X X l r}
+\toprule
+\textbf{RT} & \textbf{Vehicle type} & \textbf{Energy} & \textbf{Consumption} & \textbf{Emission factor} & \textbf{Density} & \textbf{kg CO$_2$e/km} \\
+\midrule
+100 & Electric railway & electricity & 400.00 kWh/100 km \cite{andersson2006energy} & 0.00767 kg CO$_2$e/kWh \cite{climatiq_sweden_electricity_mix} & -- & 0.03068  \\
+700 & Biogas bus & biogas & 45.00 kg biogas/100 km \cite{tica2019cng}& 0.305 kg CO$_2$e/m$^3$ biogas \cite{climatiq_bus_emission_factor}& 1.20 kg/m$^3$ \cite{biogas_composition} & 0.11400 \\
+900 & Electric tram & electricity & 296.00 kWh/100 km \cite{procitybahn_energy_consumption_trams} & 0.00767 kg CO$_2$e/kWh \cite{climatiq_sweden_electricity_mix} & -- & 0.02270 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+For the setting we assume for the bus fleet that all buses consume bio gas \cite{ostgotatrafiken_sustainability_report_2024}. We assume this as an upper bound, as the operators of Östgötatrafiken are undergoing a transition of their fleet to complete electric vehicles. In \autoref{tab:emission-consumption-assumptions} we provide the emission factors and consumption we assume for each route type, i.e., transport mode. In this work, we use a \textit{well-to-wheel} perspective. This means that we consider both the emissions during transport and the emissions generated when producing electricity or biogas. Otherwise, electric trains and biogas buses would appear to have little or no emissions during operation.
+
+
+
+For all emission calculations, we first calculate the emissions for each segment, as defined in \autoref{def:segments}. We then sum the segment emissions to obtain the emissions of a trip. 
+
+\subsection{Identifying Emission-Efficient and Emission-Intensive Trips and Segments}
+The aim is to analyze whether the additional attributes increase the information value of the emission analysis. If we assume the same emission factor and fuel consumption for all transport services, the emissions depend only on the traveled distance. As a result, long trips dominate the analysis. By including transport mode, or occupancy, the emissions are no longer determined by distance alone. We expect that transport modes such as trams or electric railways produce lower emissions per kilometer than bus-based transport when mode-specific emission factors are used. Therefore, changes in the ranking of trips, routes, or transport modes indicate that the additional attributes provide additional information. This allows operational improvements to be based on actual emissions instead of trip length alone, reducing the risk of selecting measures that do not reduce emissions or even increase them.
+
+To have baseline, we first compute the top-emission causing trips and segments based only on distance.
+
+
+\subsubsection{Distance-Based Emissions}
+%%hier fehlt noch wie das für segment und für trip zusammengerechnet wird 
+
+
+For the distance-based emission model, we assume identical vehicle types. Consequently, the fuel consumption factor and the emission factor remain constant across all vehicles, such that differences in the estimated emissions are solely caused by differences in the estimated travel distance.
+Our goal is to find the most problematic segment and trips, as well as the top-performing segment and trips with the derived OCEL to proof its usefulness. Therefore, we examine the top 10 emission-causing segments and trips. In \autoref{tab:top10_single_factor_segment_experiment}, we see the top 10 grouped segment emissions. We group those together that have the same start and stop station, as well as the same route and same emission. For the top 10 grouped segment emissions, we see that those segments with the longest distance dominate. If we only have the distance as an emission variable and constant emission factor and consumption factor for all route types, we see that buses dominate the segments. With this setup, trip tr03\_1374 would have the segment with the most emissions. We have the same observation \autoref{tab:top10_performing_single_factor_segment_experiment} that the top 10 performing grouped segment emissions have the route type bus. tr03\_7754 would have the lowest emission segment with this setting. 
+\begin{table}[H]
+\centering
+\tiny
+\setlength{\tabcolsep}{1.4pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 grouped segments ranked by distance-based energy consumption and CO$_2$e emissions. The highest-ranked segments correspond to the longest traveled distances, since this estimation uses a single distance-based consumption and emission factor.}
+\label{tab:top10_single_factor_segment_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+>{\raggedright\arraybackslash}p{1.7cm}
+r
+r
+>{\raggedright\arraybackslash}p{2.1cm}
+>{\raggedright\arraybackslash}p{2.1cm}
+>{\raggedright\arraybackslash}p{1.7cm}
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Original mode &
+RT &
+Route &
+From Stop &
+To Stop &
+Representative trip &
+Segments &
+Trips &
+\begin{tabular}{@{}c@{}}Max distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Max duration\\(min)\end{tabular} &
+Consumption &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & Biogas bus & 700 & 75 & \cellcolor{red!20}Skälvs gård & \cellcolor{red!20}Mjärdevi & tr03\_1374 & 4 & 4 & 46.96 & 33.88 & 46.96 & 46.96 & 1.000 \\
+2 & Biogas bus & 700 & 75 & \cellcolor{red!20}Mjärdevi & \cellcolor{red!20}Skälvs gård & tr03\_1368 & 4 & 4 & 45.92 & 34.62 & 45.92 & 45.92 & 1.000 \\
+3 & Biogas bus & 700 & 74 & \cellcolor{yellow!35}Skälvs gård & \cellcolor{yellow!35}Saab Norra porten & tr03\_1362 & 2 & 2 & 36.53 & 30.27 & 36.53 & 36.53 & 1.000 \\
+4 & Biogas bus & 700 & 70 & \cellcolor{green!20}Skälvs gård & \cellcolor{green!20}Hagalundsvägen & tr03\_1343 & 19 & 19 & 35.28 & 27.53 & 35.28 & 35.28 & 1.000 \\
+5 & Biogas bus & 700 & 71 & \cellcolor{green!20}Skälvs gård & \cellcolor{green!20}Hagalundsvägen & tr03\_1358 & 3 & 3 & 35.28 & 24.90 & 35.28 & 35.28 & 1.000 \\
+6 & Biogas bus & 700 & 72 & \cellcolor{green!20}Skälvs gård & \cellcolor{green!20}Hagalundsvägen & tr03\_1361 & 1 & 1 & 35.28 & 25.50 & 35.28 & 35.28 & 1.000 \\
+7 & Biogas bus & 700 & 70 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1318 & 17 & 17 & 34.81 & 27.80 & 34.81 & 34.81 & 1.000 \\
+8 & Biogas bus & 700 & 74 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1365 & 2 & 2 & 34.81 & 31.33 & 34.81 & 34.81 & 1.000 \\
+9 & Biogas bus & 700 & 72 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1360 & 1 & 1 & 34.81 & 23.73 & 34.81 & 34.81 & 1.000 \\
+10 & Biogas bus & 700 & 71 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1356 & 3 & 3 & 34.81 & 26.22 & 34.81 & 34.81 & 1.000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+
+For the top 10 grouped trip emissions shown in \autoref{tab:top10_single_factor_trip_experiment}, electric railways dominate the ranking. Since all route types are evaluated using the same consumption and emission factors, the resulting emissions are primarily driven by trip distance. Consequently, railway trips, which are generally longer than trips of other transport modes, account for the highest emission values. Under these circumstances, trips on route 81 would have the highest emissions.
+
+The top 10 performing grouped trip emissions using a single distance-based consumption and emission factor in \autoref{tab:top10_performing_single_factor_trip_experiment} are dominated by route type 700, as these have the shortest trips in the dataset. 
+
+
+\begin{table}[t]
+\centering
+\tiny
+\setlength{\tabcolsep}{1.4pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 performing grouped segments with the lowest distance-based CO$_2$e emissions. Emissions are calculated at the segment level using a single distance-based consumption and emission factor.}
+\label{tab:top10_performing_single_factor_segment_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+>{\raggedright\arraybackslash}p{1.7cm}
+r
+r
+>{\raggedright\arraybackslash}p{2.1cm}
+>{\raggedright\arraybackslash}p{2.1cm}
+>{\raggedright\arraybackslash}p{1.7cm}
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Original mode &
+RT &
+Route &
+From Stop &
+To Stop &
+Representative trip &
+Segments &
+Trips &
+\begin{tabular}{@{}c@{}}Min distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Min duration\\(min)\end{tabular} &
+Consumption &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & Biogas bus & 700 & 287 & Östantorp & Koppargården & tr03\_7754 & 5 & 5 & 0.13 & 0.10 & 0.13 & 0.13 & 1.000 \\
+2 & Biogas bus & 700 & 901 & \cellcolor{red!20}Styrstad Äppelbo & \cellcolor{red!20}Tornbyvägen & tr03\_11271 & 2 & 2 & 0.14 & 0.22 & 0.14 & 0.14 & 1.000 \\
+3 & Biogas bus & 700 & 287 & Långbrottsskolan & Eksätter & tr03\_7766 & 5 & 5 & 0.14 & 0.37 & 0.14 & 0.14 & 1.000 \\
+4 & Biogas bus & 700 & 901 & \cellcolor{green!20}Vildapelvägen & \cellcolor{green!20}Oranievägen & tr03\_11271 & 2 & 2 & 0.14 & 0.18 & 0.14 & 0.14 & 1.000 \\
+5 & Biogas bus & 700 & 901 & \cellcolor{green!20}Oranievägen & \cellcolor{green!20}Vildapelvägen & tr03\_11268 & 2 & 2 & 0.14 & 0.47 & 0.14 & 0.14 & 1.000 \\
+6 & Biogas bus & 700 & 670 & Sparbanken & Storgatan 35 & tr03\_11164 & 5 & 5 & 0.14 & 0.15 & 0.14 & 0.14 & 1.000 \\
+7 & Biogas bus & 700 & 573 & Fårsaxvägen & Kärnabrunnsgatan & tr03\_10614 & 2 & 2 & 0.15 & 0.33 & 0.15 & 0.15 & 1.000 \\
+8 & Biogas bus & 700 & 901 & Oranievägen & Liljekullen & tr03\_11272 & 2 & 2 & 0.15 & 0.17 & 0.15 & 0.15 & 1.000 \\
+9 & Biogas bus & 700 & 287 & Höjdvägen & Sunnebotorget & tr03\_7763 & 5 & 5 & 0.15 & 0.47 & 0.15 & 0.15 & 1.000 \\
+10 & Biogas bus & 700 & 901 & \cellcolor{red!20}Tornbyvägen & \cellcolor{red!20}Styrstad Äppelbo & tr03\_11269 & 2 & 2 & 0.16 & 0.32 & 0.16 & 0.16 & 1.000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\setlength{\tabcolsep}{1.4pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 grouped trips with the highest distance-based CO$_2$e emissions. Segment-level emissions are calculated using a single distance-based consumption and emission factor and then aggregated by grouped trip.}
+\label{tab:top10_single_factor_trip_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+l
+>{\raggedright\arraybackslash}p{1.8cm}
+r
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Representative trip &
+Original mode &
+RT &
+Route &
+Trips &
+\begin{tabular}{@{}c@{}}Max distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Max duration\\(min)\end{tabular} &
+Consumption &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & tr03\_1561 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 1 & 116.04 & 77.92 & 116.04 & 116.04 & 1.000 \\
+2 & tr03\_1652 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 1 & 114.98 & 65.33 & 114.98 & 114.98 & 1.000 \\
+3 & tr03\_1649 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 1 & 114.98 & 64.60 & 114.98 & 114.98 & 1.000 \\
+4 & tr03\_1631 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 5 & 114.98 & 66.73 & 114.98 & 114.98 & 1.000 \\
+5 & tr03\_1518 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 2 & 114.97 & 75.85 & 114.97 & 114.97 & 1.000 \\
+6 & tr03\_1441 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 6 & 114.97 & 65.50 & 114.97 & 114.97 & 1.000 \\
+7 & tr03\_1557 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 1 & 114.96 & 65.22 & 114.96 & 114.96 & 1.000 \\
+8 & tr03\_1451 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 3 & 106.10 & 61.13 & 106.10 & 106.10 & 1.000 \\
+9 & tr03\_1455 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 1 & 106.08 & 60.30 & 106.08 & 106.08 & 1.000 \\
+10 & tr03\_1440 & \cellcolor{cyan!18}Electric railway & 100 & 81 & 30 & 105.96 & 62.65 & 105.96 & 105.96 & 1.000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\begin{table}
+\centering
+\small
+\setlength{\tabcolsep}{1.4pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 performing grouped trips with the lowest distance-based CO$_2$e emissions. Segment-level emissions are calculated using a single distance-based consumption and emission factor and then aggregated by grouped trip.}
+\label{tab:top10_performing_single_factor_trip_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+l
+>{\raggedright\arraybackslash}p{1.8cm}
+r
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Representative trip &
+Original mode &
+RT &
+Route &
+Trips &
+\begin{tabular}{@{}c@{}}Min distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Min duration\\(min)\end{tabular} &
+Consumption &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & tr03\_9980 & \cellcolor{green!20}Biogas bus & 700 & 521 & 1 & 0.94 & 1.62 & 0.94 & 0.94 & 1.000 \\
+2 & tr03\_10414 & \cellcolor{green!20}Biogas bus & 700 & 545 & 1 & 1.65 & 3.50 & 1.65 & 1.65 & 1.000 \\
+3 & tr03\_7719 & \cellcolor{green!20}Biogas bus & 700 & 240 & 4 & 1.66 & 6.05 & 1.66 & 1.66 & 1.000 \\
+4 & tr03\_7729 & \cellcolor{green!20}Biogas bus & 700 & 243 & 4 & 1.93 & 3.68 & 1.93 & 1.93 & 1.000 \\
+5 & tr03\_3076 & \cellcolor{green!20}Biogas bus & 700 & 21 & 32 & 2.11 & 5.10 & 2.11 & 2.11 & 1.000 \\
+6 & tr03\_7739 & \cellcolor{green!20}Biogas bus & 700 & 250 & 1 & 2.22 & 4.12 & 2.22 & 2.22 & 1.000 \\
+7 & tr03\_7724 & \cellcolor{green!20}Biogas bus & 700 & 243 & 5 & 2.26 & 5.45 & 2.26 & 2.26 & 1.000 \\
+8 & tr03\_3045 & \cellcolor{green!20}Biogas bus & 700 & 21 & 26 & 2.29 & 6.32 & 2.29 & 2.29 & 1.000 \\
+9 & tr03\_7746 & \cellcolor{green!20}Biogas bus & 700 & 250 & 2 & 2.53 & 5.18 & 2.53 & 2.53 & 1.000 \\
+10 & tr03\_3044 & \cellcolor{green!20}Biogas bus & 700 & 21 & 6 & 2.74 & 7.20 & 2.74 & 2.74 & 1.000 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+\newpage
+\subsubsection{Mode-Aware Emissions}
+%%hier fehlt noch wie das für segment und für trip zusammengerechnet wird 
+For the mode-aware emission model, we no longer assume that all vehicle types are identical. Instead, we use route-type-specific consumption values and emission factors, as shown in \autoref{tab:emission-consumption-assumptions}. Therefore, the emission calculation depends on the transport mode of the corresponding route type.
+As mentioned before, we apply this formula first for the segment level, then we aggregate the results to the trip-level emissions. 
+In this subsection, we assume that we can derive for each route type a specific consumption and emission factor. 
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{1.8pt}
+\renewcommand{\arraystretch}{1.25}
+\caption{Top 10 grouped segments with the highest mode-aware CO$_2$e emissions. Emissions are calculated at the segment level using route-type-specific transport mode factors.}
+\label{tab:top10_mode_segment_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+>{\raggedright\arraybackslash}p{1.6cm}
+r
+r
+>{\raggedright\arraybackslash}p{2.4cm}
+>{\raggedright\arraybackslash}p{2.4cm}
+>{\raggedright\arraybackslash}p{1.8cm}
+>{\centering\arraybackslash}p{0.9cm}
+>{\centering\arraybackslash}p{0.8cm}
+>{\centering\arraybackslash}p{1.2cm}
+>{\centering\arraybackslash}p{1.2cm}
+>{\centering\arraybackslash}p{1.2cm}
+>{\centering\arraybackslash}p{1.4cm}
+}
+\toprule
+Rank &
+Mode &
+RT &
+Route &
+From Stop &
+To Stop &
+\begin{tabular}{@{}c@{}}Representative\\trip\end{tabular} &
+\begin{tabular}{@{}c@{}}Seg.\\count\end{tabular} &
+Trips &
+\begin{tabular}{@{}c@{}}Max\\distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Max\\duration\\(min)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\(kg\\CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\per km\\(kg\\CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & Biogas bus & 700 & 75 & \cellcolor{red!20}Skälvs gård & \cellcolor{red!20}Mjärdevi & tr03\_1374 & 4 & 4 & 46.96 & 33.88 & 5.35 & 0.114 \\
+2 & Biogas bus & 700 & 75 & \cellcolor{red!20}Mjärdevi & \cellcolor{red!20}Skälvs gård & tr03\_1368 & 4 & 4 & 45.92 & 34.62 & 5.24 & 0.114 \\
+3 & Biogas bus & 700 & 74 & \cellcolor{yellow!35}Skälvs gård & \cellcolor{yellow!35}Saab Norra porten & tr03\_1362 & 2 & 2 & 36.53 & 30.27 & 4.16 & 0.114 \\
+4 & Biogas bus & 700 & 70 & \cellcolor{green!20}Skälvs gård & \cellcolor{green!20}Hagalundsvägen & tr03\_1343 & 19 & 19 & 35.28 & 27.53 & 4.02 & 0.114 \\
+5 & Biogas bus & 700 & 71 & \cellcolor{green!20}Skälvs gård & \cellcolor{green!20}Hagalundsvägen & tr03\_1358 & 3 & 3 & 35.28 & 24.90 & 4.02 & 0.114 \\
+6 & Biogas bus & 700 & 72 & \cellcolor{green!20}Skälvs gård & \cellcolor{green!20}Hagalundsvägen & tr03\_1361 & 1 & 1 & 35.28 & 25.50 & 4.02 & 0.114 \\
+7 & Biogas bus & 700 & 70 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1318 & 17 & 17 & 34.81 & 27.80 & 3.97 & 0.114 \\
+8 & Biogas bus & 700 & 74 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1365 & 2 & 2 & 34.81 & 31.33 & 3.97 & 0.114 \\
+9 & Biogas bus & 700 & 72 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1360 & 1 & 1 & 34.81 & 23.73 & 3.97 & 0.114 \\
+10 & Biogas bus & 700 & 71 & \cellcolor{green!20}Hagalundsvägen & \cellcolor{green!20}Skälvs gård & tr03\_1356 & 3 & 3 & 34.81 & 26.22 & 3.97 & 0.114 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+
+
+
+In \autoref{tab:emission-consumption-assumptions}, we provide an overview of the assumed emission factor and consumption for each specific route type. Compared to the emissions in \autoref{tab:top10_performing_single_factor_segment_experiment}, no changes can be observed in \autoref{tab:top10_mode_segment_experiment}. The segments with the highest emissions are conducted by bus. The additional factor does not affect them.
+We do have a different result in \autoref{tab:top10_performing_mode_segment_experiment} compared to \autoref{tab:top10_performing_single_factor_segment_experiment}. 
+
+\begin{table}
+\centering
+\small
+\setlength{\tabcolsep}{1.6pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 grouped trips with the highest mode-aware CO$_2$e emissions. Segment-level emissions are calculated using route-type-specific transport mode factors and then aggregated by grouped trip.}
+\label{tab:top10_mode_trip_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+l
+>{\raggedright\arraybackslash}p{1.8cm}
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Representative trip &
+Mode &
+RT &
+Route &
+Trips &
+\begin{tabular}{@{}c@{}}Max distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Max duration\\(min)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & tr03\_7678 & \cellcolor{green!20}Biogas bus & 700 & 26 & 1 & 68.39 & 56.68 & 7.80 & 0.114 \\
+2 & tr03\_1270 & \cellcolor{green!20}Biogas bus & 700 & 50 & 14 & 66.56 & 82.70 & 7.59 & 0.114 \\
+3 & tr03\_1285 & \cellcolor{green!20}Biogas bus & 700 & 50 & 13 & 66.47 & 91.00 & 7.58 & 0.114 \\
+4 & tr03\_1280 & \cellcolor{green!20}Biogas bus & 700 & 50 & 1 & 65.72 & 62.87 & 7.49 & 0.114 \\
+5 & tr03\_1304 & \cellcolor{green!20}Biogas bus & 700 & 52 & 3 & 59.49 & 82.82 & 6.78 & 0.114 \\
+6 & tr03\_1299 & \cellcolor{green!20}Biogas bus & 700 & 52 & 4 & 59.48 & 82.85 & 6.78 & 0.114 \\
+7 & tr03\_9350 & \cellcolor{green!20}Biogas bus & 700 & 460 & 17 & 58.54 & 82.00 & 6.67 & 0.114 \\
+8 & tr03\_10442 & \cellcolor{green!20}Biogas bus & 700 & 546 & 2 & 58.45 & 76.53 & 6.66 & 0.114 \\
+9 & tr03\_1309 & \cellcolor{green!20}Biogas bus & 700 & 65 & 1 & 58.34 & 65.92 & 6.65 & 0.114 \\
+10 & tr03\_10448 & \cellcolor{green!20}Biogas bus & 700 & 546 & 1 & 58.14 & 70.95 & 6.63 & 0.114 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{1.8pt}
+\renewcommand{\arraystretch}{1.25}
+\caption{Top 10 performing grouped segments with the lowest mode-aware CO$_2$e emissions. Emissions are calculated at the segment level using route-type-specific transport mode factors.}
+\label{tab:top10_performing_mode_segment_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+>{\raggedright\arraybackslash}p{1.6cm}
+r
+r
+>{\raggedright\arraybackslash}p{2.4cm}
+>{\raggedright\arraybackslash}p{2.4cm}
+>{\raggedright\arraybackslash}p{1.8cm}
+>{\centering\arraybackslash}p{0.9cm}
+>{\centering\arraybackslash}p{0.8cm}
+>{\centering\arraybackslash}p{1.2cm}
+>{\centering\arraybackslash}p{1.2cm}
+>{\centering\arraybackslash}p{1.2cm}
+>{\centering\arraybackslash}p{1.4cm}
+}
+\toprule
+Rank &
+Mode &
+RT &
+Route &
+From Stop &
+To Stop &
+\begin{tabular}{@{}c@{}}Representative\\trip\end{tabular} &
+\begin{tabular}{@{}c@{}}Seg.\\count\end{tabular} &
+Trips &
+\begin{tabular}{@{}c@{}}Min\\distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Min\\duration\\(min)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\(kg\\CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\per km\\(kg\\CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & Electric tram & 900 & 2 & \cellcolor{red!20}Hagaskolan & \cellcolor{red!20}Cedersborgsvägen & tr03\_457 & 100 & 100 & 0.24 & 0.33 & 0.01 & 0.023 \\
+2 & Electric tram & 900 & 2 & \cellcolor{green!20}Styrmansgatan & \cellcolor{green!20}Nya torget & tr03\_342 & 100 & 100 & 0.26 & 0.25 & 0.01 & 0.023 \\
+3 & Electric tram & 900 & 2 & \cellcolor{green!20}Nya torget & \cellcolor{green!20}Styrmansgatan & tr03\_10 & 98 & 98 & 0.26 & 0.32 & 0.01 & 0.023 \\
+4 & Electric tram & 900 & 2 & Broocmans plan & Albrektsvägen & tr03\_9 & 100 & 100 & 0.26 & 0.30 & 0.01 & 0.023 \\
+5 & Electric tram & 900 & 3 & \cellcolor{yellow!35}Hörsalsparken & \cellcolor{yellow!35}Söder Tull & tr03\_496 & 98 & 98 & 0.26 & 0.30 & 0.01 & 0.023 \\
+6 & Electric tram & 900 & 2 & \cellcolor{cyan!18}Ljura centrum & \cellcolor{cyan!18}Ljura spårvägsbro & tr03\_186 & 100 & 100 & 0.27 & 0.33 & 0.01 & 0.023 \\
+7 & Electric tram & 900 & 2 & \cellcolor{cyan!18}Ljura spårvägsbro & \cellcolor{cyan!18}Ljura centrum & tr03\_320 & 99 & 99 & 0.27 & 0.20 & 0.01 & 0.023 \\
+8 & Electric tram & 900 & 3 & Vidablick & Rågången & tr03\_550 & 97 & 97 & 0.28 & 0.12 & 0.01 & 0.023 \\
+9 & Electric tram & 900 & 2 & \cellcolor{red!20}Cedersborgsvägen & \cellcolor{red!20}Hagaskolan & tr03\_93 & 97 & 97 & 0.29 & 0.35 & 0.01 & 0.023 \\
+10 & Electric tram & 900 & 3 & \cellcolor{yellow!35}Söder Tull & \cellcolor{yellow!35}Hörsalsparken & tr03\_785 & 99 & 99 & 0.29 & 0.35 & 0.01 & 0.023 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+The top performing grouped segment emission are not dominated by biogas buses anymore, with the shortest segments but with transport mode tram. The segment of trip tr03\_7754 which we observed in \autoref{tab:top10_performing_single_factor_segment_experiment} is not existent.
+
+For the top 10 grouped mode-aware trip emissions in \autoref{tab:top10_mode_trip_experiment}, we have again a completely different picture. Instead of electric railway dominating, the transport mode bus provides primarily trips with the most emissions, whereas the distance of the bus trips 40\% shorter than the railway distance. 
+
+For the top 10 performing grouped trip emissions in \autoref{tab:top10_performing_mode_trip_experiment}, we see a mixture of tram and biogas buses instead of only biogas buses as in \autoref{tab:top10_performing_single_factor_trip_experiment} before. Also, the tram covers almost four times the distance of the biogas bus while still producing lower emissions.
+
+
+
+
+
+\begin{table}
+\centering
+\small
+\setlength{\tabcolsep}{1.6pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 grouped trips with the highest mode-aware CO$_2$e emissions. Segment-level emissions are calculated using route-type-specific transport mode factors and then aggregated by grouped trip.}
+\label{tab:top10_mode_trip_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+l
+>{\raggedright\arraybackslash}p{1.8cm}
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Representative trip &
+Mode &
+RT &
+Route &
+Trips &
+\begin{tabular}{@{}c@{}}Max distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Max duration\\(min)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & tr03\_7678 & \cellcolor{green!20}Biogas bus & 700 & 26 & 1 & 68.39 & 56.68 & 7.80 & 0.114 \\
+2 & tr03\_1270 & \cellcolor{green!20}Biogas bus & 700 & 50 & 14 & 66.56 & 82.70 & 7.59 & 0.114 \\
+3 & tr03\_1285 & \cellcolor{green!20}Biogas bus & 700 & 50 & 13 & 66.47 & 91.00 & 7.58 & 0.114 \\
+4 & tr03\_1280 & \cellcolor{green!20}Biogas bus & 700 & 50 & 1 & 65.72 & 62.87 & 7.49 & 0.114 \\
+5 & tr03\_1304 & \cellcolor{green!20}Biogas bus & 700 & 52 & 3 & 59.49 & 82.82 & 6.78 & 0.114 \\
+6 & tr03\_1299 & \cellcolor{green!20}Biogas bus & 700 & 52 & 4 & 59.48 & 82.85 & 6.78 & 0.114 \\
+7 & tr03\_9350 & \cellcolor{green!20}Biogas bus & 700 & 460 & 17 & 58.54 & 82.00 & 6.67 & 0.114 \\
+8 & tr03\_10442 & \cellcolor{green!20}Biogas bus & 700 & 546 & 2 & 58.45 & 76.53 & 6.66 & 0.114 \\
+9 & tr03\_1309 & \cellcolor{green!20}Biogas bus & 700 & 65 & 1 & 58.34 & 65.92 & 6.65 & 0.114 \\
+10 & tr03\_10448 & \cellcolor{green!20}Biogas bus & 700 & 546 & 1 & 58.14 & 70.95 & 6.63 & 0.114 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+
+
+The results confirm our expectation that transport mode improves the emission analysis. Although electric trips are often among the longest trips, they have the lowest emissions. This shows that decisions based only on traveled distance could lead to wrong conclusions. Using the additional information from the event log helps to make better operational decisions.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{1.6pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Top 10 performing trips with the lowest mode-aware CO$_2$e emissions. Segment-level emissions are calculated using route-type-specific transport mode factors and then aggregated to the trip level.}
+\label{tab:top10_performing_mode_trip_experiment}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+r
+l
+>{\raggedright\arraybackslash}p{1.8cm}
+r
+r
+r
+r
+r
+r
+r
+}
+\toprule
+Rank &
+Representative trip &
+Mode &
+RT &
+Route &
+Trips &
+\begin{tabular}{@{}c@{}}Min distance\\(km)\end{tabular} &
+\begin{tabular}{@{}c@{}}Min duration\\(min)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission\\(kg CO$_2$e)\end{tabular} &
+\begin{tabular}{@{}c@{}}Emission per km\\(kg CO$_2$e/km)\end{tabular} \\
+\midrule
+1 & tr03\_534 & \cellcolor{cyan!18}Electric tram & 900 & 3 & 2 & 4.38 & 9.20 & 0.10 & 0.023 \\
+2 & tr03\_9980 & \cellcolor{green!20}Biogas bus & 700 & 521 & 1 & 0.94 & 1.62 & 0.11 & 0.114 \\
+3 & tr03\_356 & \cellcolor{cyan!18}Electric tram & 900 & 2 & 1 & 5.30 & 12.75 & 0.12 & 0.023 \\
+4 & tr03\_45 & \cellcolor{cyan!18}Electric tram & 900 & 2 & 2 & 5.34 & 12.28 & 0.12 & 0.023 \\
+5 & tr03\_457 & \cellcolor{cyan!18}Electric tram & 900 & 2 & 1 & 5.68 & 14.62 & 0.13 & 0.023 \\
+6 & tr03\_597 & \cellcolor{cyan!18}Electric tram & 900 & 3 & 1 & 5.99 & 17.92 & 0.14 & 0.023 \\
+7 & tr03\_198 & \cellcolor{cyan!18}Electric tram & 900 & 2 & 1 & 6.43 & 15.55 & 0.15 & 0.023 \\
+8 & tr03\_402 & \cellcolor{cyan!18}Electric tram & 900 & 2 & 1 & 7.99 & 21.47 & 0.18 & 0.023 \\
+9 & tr03\_10414 & \cellcolor{green!20}Biogas bus & 700 & 545 & 1 & 1.65 & 3.50 & 0.19 & 0.114 \\
+10 & tr03\_7719 & \cellcolor{green!20}Biogas bus & 700 & 240 & 4 & 1.66 & 6.05 & 0.19 & 0.114 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+
+
+
+\subsection{Reducing Emissions by Merging Low-Occupancy Bus Routes}
+In this subsection, we evaluate the usefulness of the proposed event log by investigating whether the derived data enable the identification of operational improvement opportunities, with the primary goal of reducing emissions. Therefore, we identify inefficient trips with respect to occupancy. The intuition is that trips with high occupancy should have a lower emission score per passenger, while trips with low occupancy should have a higher emission score.
+
+We investigate whether trips with high occupancy can be combined with trips that have low occupancy to reduce emissions. For example, if two trips share the last half of their stops, the bus with low occupancy could terminate at the point where both trips begin to share the same stops. The remaining part of the route would then be served by the bus with the higher occupancy. In this way, the overlapping section of the low-occupancy trip is removed and its passengers are served by the more occupied bus.
+
+This evaluation illustrates how the information derived from GTFS can be used to identify potential operational improvements that may reduce emissions while maintaining the transport service.
+
+In the following, we demonstrate the potential emission reductions that can be achieved using the derived data.
+We evaluate in four steps:
+\begin{enumerate}[
+    leftmargin=*,
+    itemsep=2.25em,
+    topsep=0.35em,
+    parsep=0pt,
+    partopsep=0pt
+]
+    \item Identify time periods in which occupancy status 0 and occupancy status 3 occur simultaneously.
+    \item Identify segments with the highest mean occupancy and occupancy variation during these time periods.
+    \item Compare trips with high occupancy and low occupancy that share common stops.
+    \item If appropriate, merge or split trips to reduce low-occupancy services.
+    \item Compare the emissions of the modified event log with those of the original event log.
+\end{enumerate}
+In the first step, the goal is to identify time periods in which low-occupancy and highly occupied buses operate in parallel and in the same direction. \autoref{fig:hourly_heatmap_occupancy_status} shows a heatmap of the number of events for each occupancy status throughout the day. For example, between 5:00 and 6:00, we observe many events with occupancy status 0 as well as several events with occupancy status 2 and 3. This indicates that both nearly empty and well-occupied buses are operating at the same time. A possible explanation is that operators start many services in the early morning, but not all of them are equally utilized. Consequently, we observe a large difference between the number of events with occupancy status 0 and occupancy status 3, suggesting that empty and occupied trips run in parallel. Based on this observation, we select the time period between 6:00 and 7:00. Furthermore, we have to look at trips that travel in the same direction. 
+Therefore, we consider trips with direction\_id = 0.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{thesis-main/figures/Evaluation_figure/hourly_occupancy_counts_heatmap.png}
+    \caption{Hourly distribution of occupancy status values in the event log. The heat map shows how many events of each occupancy status occur in each hour of the day.}
+    \label{fig:hourly_heatmap_occupancy_status}
+\end{figure}
+
+
+\clearpage
+\begin{figure}[htbp]
+    \centering
+
+    \begin{subfigure}{0.95\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/top_segments_hour_06_direction_0_by_mean.png}
+        \caption{Mean occupancy status by trip group.}
+        \label{fig:high-spread-hour-06-mean}
+    \end{subfigure}
+
+    \vspace{0.2cm}
+
+    \begin{subfigure}{0.95\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{thesis-main/figures/Evaluation_figure/top_segments_hour_06_direction_0_by_std.png}
+        \caption{Standard deviation of occupancy status by trip group.}
+        \label{fig:high-spread-hour-06-std}
+    \end{subfigure}
+
+    \caption{Mean and standard deviation of occupancy status for high-spread trip groups between 06:00 and 07:00.}
+    \label{fig:high-spread-hour-06-occupancy-bars}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.3}
+\caption{Trips participating in the segments with the highest occupancy variation between 06:00 and 07:00 while operating in the same direction. Repeated trip groups indicate segments shared by the same vehicles, while high standard deviations reveal segments where some trips run nearly empty and others show substantially higher occupancy, pointing to potential capacity and emission-saving opportunities.}
+\label{tab:top-segments-direction-0-trips}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{
+l
+>{\raggedright\arraybackslash}p{4.0cm}
+r
+r
+r
+>{\raggedright\arraybackslash}p{7.0cm}
+}
+\toprule
+Segment & Stops & Mean & Std. & Events & Trips \\
+\midrule
+seg\_1079 & Lillgårdsgatan, Berga centrum & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_3246 & Morgongatan, Middagsgatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_966 & Middagsgatan, Strågatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_964 & Strågatan, Hässlegatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_619 & Aspnäset, Ullstämma by & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_108 & Hässlegatan, Ortgatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_1422 & Ortgatan, Poleraregatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_1083 & Galoppgatan, Yrkesvägen & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_1081 & Yrkesvägen, Lillgårdsgatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_1085 & Poleraregatan, Galoppgatan & 1.00 & 1.15 & 4 & \cellcolor{red!15}tr03\_7353, tr03\_7321 \\
+seg\_1229 & Berga centrum, Pionjärgatan & 0.67 & 1.03 & 6 & \cellcolor{orange!20}tr03\_7299, tr03\_7353, tr03\_7321 \\
+seg\_1231 & Pionjärgatan, Rotegatan & 0.67 & 1.03 & 6 & \cellcolor{orange!20}tr03\_7299, tr03\_7353, tr03\_7321 \\
+seg\_3427 & Tinnerbäcksgränd, US Södra entrén & 0.67 & 1.03 & 6 & \cellcolor{orange!20}tr03\_7299, tr03\_7353, tr03\_7321 \\
+seg\_616 & Rotegatan, Tinnerbäcksgränd & 0.67 & 1.03 & 6 & \cellcolor{orange!20}tr03\_7299, tr03\_7353, tr03\_7321 \\
+seg\_3459 & Hemmansgatan, Djurgården centrum & 1.20 & 1.03 & 10 & \cellcolor{yellow!30}tr03\_3902, tr03\_3878, tr03\_3879, tr03\_3903, tr03\_3880 \\
+seg\_685 & Tegskiftesgatan, Odalgatan & 1.20 & 1.03 & 10 & \cellcolor{yellow!30}tr03\_3902, tr03\_3878, tr03\_3879, tr03\_3903, tr03\_3880 \\
+seg\_3358 & Odalgatan, Bygdegatan & 1.20 & 1.03 & 10 & \cellcolor{yellow!30}tr03\_3902, tr03\_3878, tr03\_3879, tr03\_3903, tr03\_3880 \\
+seg\_3349 & Bygdegatan, Hemmansgatan & 1.20 & 1.03 & 10 & \cellcolor{yellow!30}tr03\_3902, tr03\_3878, tr03\_3879, tr03\_3903, tr03\_3880 \\
+seg\_3461 & Djurgården centrum, Djurgården & 1.33 & 1.00 & 9 & \cellcolor{yellow!30}tr03\_3902, tr03\_3878, tr03\_3879, tr03\_3903, tr03\_3880 \\
+seg\_1428 & Ullstämma by, Morgongatan & 1.00 & 0.94 & 10 & \cellcolor{green!18}tr03\_7353, tr03\_6877, tr03\_7321, tr03\_6862, tr03\_6880 \\
+seg\_3361 & Ullstämmavägen, Ullstämma by & 1.00 & 0.89 & 6 & \cellcolor{cyan!18}tr03\_6877, tr03\_6862, tr03\_6880 \\
+seg\_1002 & Kungsgatan, Linköpings resecentrum & 1.00 & 0.89 & 6 & \cellcolor{blue!12}tr03\_6902, tr03\_6877, tr03\_6862 \\
+seg\_3288 & Bygärdesgatan, Mjärdevi Center & 1.00 & 0.89 & 6 & \cellcolor{purple!12}tr03\_6063, tr03\_6038, tr03\_6074 \\
+seg\_3363 & Fornvägen, Ullstämmavägen & 1.00 & 0.89 & 6 & \cellcolor{cyan!18}tr03\_6877, tr03\_6862, tr03\_6880 \\
+seg\_631 & Änggårdsskolan, Boställsgatan & 1.00 & 0.89 & 6 & \cellcolor{purple!12}tr03\_6063, tr03\_6038, tr03\_6074 \\
+seg\_3247 & Morgongatan, Grindgatan & 1.20 & 0.84 & 5 & \cellcolor{cyan!18}tr03\_6877, tr03\_6862, tr03\_6880 \\
+seg\_1006 & Kungsgatan, Linköpings resecentrum & 1.10 & 0.70 & 21 & \cellcolor{gray!15}tr03\_4613, tr03\_3846, tr03\_3877, tr03\_4686, tr03\_3902, tr03\_4652, tr03\_3878, tr03\_4614 \\
+seg\_1030 & Parkgatan, Länsstyrelsen & 1.33 & 0.52 & 6 & \cellcolor{teal!15}tr03\_6073, tr03\_6063, tr03\_6038 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+In \autoref{fig:high-spread-hour-06-occupancy-bars}, we show the results of the second step. We analyze the segments with the highest mean occupancy and the largest occupancy deviation. A high occupancy deviation indicates that both highly occupied and nearly empty trips use the same segment. Since the neighboring segments often show the same pattern, we can identify complete trips that run in parallel but have different occupancy levels. These trips are potential candidates for consolidation. In \autoref{tab:top-segments-direction-0-trips}, we listed the trips containing the high deviating segments. 
+In \autoref{fig:selected-direction-0-iterative-merge-comparison} we conduct the third step. We show an excerpt of the selected trips using a simplified representation of their process paths. For each stop, the \textit{arrive\_stop} and \textit{departure\_stop} activities are combined into a single stop. We compare the trips before and after the proposed consolidation. As mentioned before, this approach is only intended to reduce the emission by joining low occupied and high occupied trips that share a set of stops. The consequences regarding implications for the whole schedule or quality of service is neglected. The calculation logic is described as follows: 
+\\ \\
+\noindent
+\begin{minipage}{\textwidth}
+\begin{enumerate}
+    \item Load all relevant trips together with their segments.
+    \item Sort the trips by the timestamp of their first event.
+    \item Process the trips from left to right, allowing low-occupancy trips to connect to higher-occupancy trips after splitting.
+    \item Compare each trip with the following trip based on occupancy.
+    \item If the following trip has an equal or higher occupancy, identify the shared stops.
+    \item Remove the shared part from the trip with the lower occupancy.
+    \item Keep the remaining part of the low-occupancy trip as a new trip.
+    \item Remove the trip if no remaining part exists.
+    \vspace{0.5cm}
+\end{enumerate}
+\end{minipage}
+\autoref{fig:before-merging-empty-occupied-trips} shows the selected trips before consolidation. The red boxes highlight stops that are shared by multiple trips. We can see that several trips share the final part of their route. The color of each path represents its occupancy status, where green indicates occupancy status 0 and red indicates occupancy status 3.
+
+\autoref{fig:before-merging-empty-occupied-trips} shows the result after consolidating trips with low occupancy into trips with higher occupancy. In the shared part of the route, the low-occupancy trip is shortened, while the remaining stops are served by the trip with the higher occupancy.
+
+\begin{figure}[ht]
+    \centering
+
+    \begin{subfigure}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[
+            width=\linewidth,
+            height=0.88\textheight,
+            keepaspectratio
+        ]{thesis-main/figures/Evaluation_figure/process_path_pre_merge.png}
+        \caption{Original high-spread trips}
+        \label{fig:before-merging-empty-occupied-trips}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.47\textwidth}
+        \centering
+        \includegraphics[
+            width=\linewidth,
+            height=0.88\textheight,
+            keepaspectratio
+        ]{thesis-main/figures/Evaluation_figure/process_path_post_merge.png}
+        \caption{After merging}
+        \label{fig:process-path-after-merging}
+    \end{subfigure}
+
+    \caption{Comparison of selected direction 0 process paths before and after iterative severity merging.}
+    \label{fig:selected-direction-0-iterative-merge-comparison}
+\end{figure}
+
+In \autoref{tab:high-spread-original-vs-iterative-trip-emissions-hour-06}, we compare the emission values before and after merging and splitting the trips in step 4. The original CO$_2$e values are higher than the values after merging. After applying the merging and splitting procedure, 43.5\% of the original  emission score remains. For some individual trips, the reduction is even larger, and in some cases the duplicated trip parts are removed completely.
+
+It is important to note that this analysis only considers a selected time window between 06:00 and 07:00. The results do not include further operational constraints, such as the full timetable, vehicle scheduling, driver duties, or the need for a bus to continue its full planned route for later service. Therefore, the results should not be interpreted as a direct recommendation to remove or shorten trips. Instead, they show where overlapping low- and high-occupancy trip parts occur and where further operational analysis could be useful.
+
+Overall, this example demonstrates the usefulness of the derived event log. It provides operational insights and supports the identification of potential operational changes that may reduce emissions. In particular, the segments derived from the OCEL allow us to identify problematic process paths. These problematic paths can then be compared at the trip level with other trips exhibiting similar patterns. This makes it possible to assess potential emission reductions across different objects and at higher levels of analysis, such as operators or routes.
+
+\begin{table}[H]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.35}
+\caption{Comparison of trip-level CO$_2$ emissions before and after merging low-occupancy trips. The last column reports the remaining emissions as a percentage of the original (before merging) emissions.}
+\label{tab:high-spread-original-vs-iterative-trip-emissions-hour-06}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrr>{\raggedright\arraybackslash}p{3.2cm}rrr}
+\toprule
+Trip & Route & Seg. orig. & CO$_2$e orig. & Delay orig. & Seg. merged & Merged Trip(s) & CO$_2$e merged & Delay merged & Rem. \%\\
+\midrule
+tr03\_1277 & 50 & 25 & 7.59 & 8.26 & 16 & tr03\_1277\_splittednew1 & 6.72 & 6.92 & 83.7 \\
+tr03\_1283 & 50 & 25 & 7.59 & 8.25 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_10490 & 555 & 41 & 3.52 & 4.21 & 28 & tr03\_10490\_splittednew1 & 2.47 & 2.81 & 66.8 \\
+tr03\_7353 & 17 & 20 & 1.32 & 1.37 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_4460 & 4 & 16 & 1.02 & 1.25 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_7321 & 17 & 20 & 1.32 & 1.16 & 14 & tr03\_7321\_splittednew1 & 1.00 & 0.89 & 76.4 \\
+tr03\_4461 & 4 & 16 & 1.02 & 1.09 & 2 & tr03\_4461\_splittednew1 & 0.15 & 0.15 & 13.9 \\
+tr03\_4436 & 4 & 16 & 1.02 & 1.08 & 2 & tr03\_4436\_splittednew1 & 0.15 & 0.16 & 14.8 \\
+tr03\_3743 & 2 & 12 & 0.85 & 1.08 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_6880 & 15 & 16 & 1.01 & 1.03 & 12 & tr03\_6880\_splittednew1 & 0.78 & 0.81 & 78.2 \\
+tr03\_4462 & 4 & 16 & 1.02 & 1.03 & 8 & tr03\_4462\_splittednew1 & 0.45 & 0.42 & 41.0 \\
+tr03\_6074 & 12 & 16 & 0.94 & 1.01 & 15 & tr03\_6074\_splittednew1 & 0.89 & 0.96 & 94.9 \\
+tr03\_6862 & 15 & 16 & 1.01 & 0.95 & 9 & tr03\_6862\_splittednew1, tr03\_6862\_splittednew2 & 0.57 & 0.55 & 57.6 \\
+tr03\_3880 & 2 & 12 & 0.82 & 0.94 & 12 & tr03\_3880 & 0.82 & 0.94 & 100.0 \\
+tr03\_6063 & 12 & 16 & 0.94 & 0.90 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_3902 & 2 & 12 & 0.82 & 0.89 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_3752 & 2 & 12 & 0.85 & 0.89 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_3903 & 2 & 12 & 0.82 & 0.84 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_6877 & 15 & 16 & 1.01 & 0.84 & 12 & tr03\_6877\_splittednew1 & 0.78 & 0.66 & 78.5 \\
+tr03\_3720 & 2 & 12 & 0.85 & 0.83 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_3879 & 2 & 12 & 0.82 & 0.80 & 0 & - & 0.00 & 0.00 & 0.0 \\
+tr03\_6038 & 12 & 16 & 0.94 & 0.79 & 15 & tr03\_6038\_splittednew1 & 0.89 & 0.74 & 94.7 \\
+tr03\_3744 & 2 & 12 & 0.85 & 0.72 & 12 & tr03\_3744 & 0.85 & 0.72 & 100.0 \\
+tr03\_3773 & 2 & 12 & 0.85 & 0.69 & 12 & tr03\_3773 & 0.85 & 0.69 & 100.0 \\
+tr03\_3878 & 2 & 12 & 0.82 & 0.66 & 12 & tr03\_3878 & 0.82 & 0.66 & 100.0 \\
+\midrule
+\textbf{Total} &  & \textbf{411} & \textbf{39.62} & \textbf{41.53} & \textbf{181} &  & \textbf{18.19} & \textbf{18.06} & \textbf{43.5} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}

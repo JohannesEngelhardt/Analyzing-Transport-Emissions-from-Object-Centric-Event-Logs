@@ -1,0 +1,66 @@
+\documentclass[master]{padsthesis}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Useful LaTeX Packages and Commands %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Outsourced to preamble.sty
+\usepackage{preamble}
+
+\addbibresource{reference.bib}
+
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Config %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\author{Johannes Engelhardt}
+\studentID{357589}
+\title{Analyzing Transport Emissions from Object-Centric Event Logs}
+\firstexaminer{Prof.\@ Dr.\@ Wil M.\,P. van der Aalst} % defaults to Prof. van der Aalst
+\secondexaminer{Prof. Dr. Sander J. J. Leemans}
+\advisor{Nina Graves, M.Sc.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Title and Abstract %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\maketitle
+%\cleardoublepage
+
+\frontmatter
+
+%\input{chapters/acknowledgements.tex}
+
+\input{chapters/abstract.tex}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Content %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\mainmatter
+
+\input{chapters/introduction.tex}
+
+\input{chapters/related_work.tex}
+
+\input{chapters/prelim.tex}
+
+\input{chapters/method.tex}
+
+\input{chapters/implementation.tex}
+
+\input{chapters/evaluation.tex}
+
+\input{chapters/discussion.tex}
+
+\input{chapters/conclusion.tex}
+
+%\input{config/imports}
+%\input{config/rwth_colors}
+%\input{config/outlines}
+%\input{config/pm_commands}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Appendix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+%\chapter{Some additional stuff}
+%Try to avoid appendices.
+%If you can't, this is a place to show all kinds of results that are supportive, yet, not critical for your thesis.
+
+\backmatter
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Bibliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\printbibliography
+
+\end{document}

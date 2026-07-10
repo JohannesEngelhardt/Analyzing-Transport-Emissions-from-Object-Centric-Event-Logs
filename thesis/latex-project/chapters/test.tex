@@ -1,0 +1,75 @@
+\begin{algorithm}[H]
+	\caption{Strict BFS}
+	\KwIn{
+		Log graph $G = (E, O, A)$, 
+		start events $S \subseteq E$, 
+		end events $E_{end}$,
+		resource type $\omega_t$
+	}
+	\KwOut{
+		Candidate set $C = \{(s, e, o_{res})\}$ and
+		unmatched start events $U$
+	}
+	\BlankLine
+	
+	Initialize $C \leftarrow \emptyset$\;
+	Initialize $U \leftarrow \emptyset$\;
+	
+	\ForEach{$s \in S$}{
+		Initialize queue $Q \leftarrow [(s, \tau(s))]$\;  % (node, timestamp)
+		Initialize $visited \leftarrow \emptyset$\;
+		$res\_found \leftarrow False$\;
+		$end\_found \leftarrow False$\;
+		$last\_ts \leftarrow \tau(s)$\;
+		
+		\While{$Q$ not empty}{
+			$(m, last\_ts) \leftarrow Q.pop()$\;
+			
+			\ForEach{$n$ neighbor of $m$ in $G$}{
+				
+				% --- (1) If m is an event node: add its unvisited neighbors ---
+				\If{$m$ represents an \textbf{event node}}{
+					\If{$n \notin visited$}{
+						Add $(n, \tau(m))$ to $Q$\;
+						Add $n$ to $visited$\;
+					}
+				}
+				
+				% --- (2) If n is an object node: compare timestamps to next events ---
+				\If{$n$ represents an \textbf{object node}}{
+					\ForEach{$n'$ neighbor of $n$}{
+						\If{$n'$ represents an \textbf{event node}}{
+							\If{$\tau(n') > last\_ts$}{
+								Add $(n', \tau(n'))$ to $Q$\;
+								Add $n'$ to $visited$\;
+							}
+						}
+					}
+				}
+				
+				% --- (3) Skip resource objects that are not of type ω_t ---
+				\If{$m$ represents a \textbf{resource object} and $\omega(m) \neq \omega_t$}{
+					\textbf{continue}\;
+				}
+				
+				% --- (4) Detect resource objects of the given type ω_t ---
+				\If{$m$ represents a \textbf{resource object} and $\omega(m) = \omega_t$}{
+					$res\_found \leftarrow True$\;
+					$o_{res} \leftarrow m$\;
+				}
+				
+				% --- (5) If a resource object was found and an end event is reached ---
+				\If{$res\_found$ \textbf{and} $n$ represents an \textbf{end event}}{
+					Add $(s, n, o_{res})$ to $C$\;
+					$end\_found \leftarrow True$\;
+				}
+			}
+		}
+		
+		% --- (6) Mark start nodes without end event ---
+		\If{$end\_found = False$}{
+			Add $s$ to $U$\;
+		}
+	}
+	\Return $(C, U)$\;
+\end{algorithm}
