@@ -1,0 +1,4 @@
+activity,transitions,min_distance_m,median_distance_m,mean_distance_m,max_distance_m
+repositioning_pause,2454,0.9974105859845299,41.35064918462607,1853.7688609644194,68203.92802978081
+stationary_pause,2213,0.0,0.0,0.0,0.0
+overall,4667,0.0,7.175240447163942,974.747971889155,68203.92802978081
